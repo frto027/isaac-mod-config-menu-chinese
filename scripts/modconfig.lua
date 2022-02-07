@@ -133,6 +133,22 @@ if not SaveHelper then
 	
 end
 
+local function GetCurrentModPath()
+	if debug then
+		return string.sub(debug.getinfo(GetCurrentModPath).source,2) .. "/../../"
+	end
+	--use some very hacky trickery to get the path to this mod
+	local _, err = pcall(require, "")
+	local _, basePathStart = string.find(err, "no file '", 1)
+	local _, modPathStart = string.find(err, "no file '", basePathStart)
+	local modPathEnd, _ = string.find(err, ".lua'", modPathStart)
+	local modPath = string.sub(err, modPathStart+1, modPathEnd-1)
+	modPath = string.gsub(modPath, "\\", "/")
+	
+	return modPath
+end
+local ReloadFont = nil
+
 --create the mod
 ModConfigMenu.Mod = ModConfigMenu.Mod or RegisterMod("Mod Config Menu", 1)
 
@@ -198,6 +214,9 @@ function ModConfigMenu.LoadSave(fromData)
 			ScreenHelper.SetOffset(ModConfigMenu.Config["General"].HudOffset)
 		end
 		
+		--make Font match
+		ReloadFont(ModConfigMenu.Config["Mod Config Menu"].UseGameFont)
+
 		return saveData
 		
 	end
@@ -208,8 +227,7 @@ end
 --------------
 --game start--
 --------------
-local versionPrintFont = Font()
-versionPrintFont:Load("font/pftempestasevencondensed.fnt")
+local versionPrintFont
 
 local versionPrintTimer = 0
 
@@ -221,7 +239,8 @@ function ModConfigMenu.RoomIsSafe()
 	
 	for _, entity in pairs(Isaac.GetRoomEntities()) do
 		if entity:IsActiveEnemy() and not entity:HasEntityFlags(EntityFlag.FLAG_FRIENDLY)
-		and (not ModConfigMenu.IgnoreActiveEnemies[entity.Type] or (ModConfigMenu.IgnoreActiveEnemies[entity.Type] and not ModConfigMenu.IgnoreActiveEnemies[entity.Type][-1] and not ModConfigMenu.IgnoreActiveEnemies[entity.Type][entity.Variant])) then
+		and (not ModConfigMenu.IgnoreActiveEnemies[entity.Type] or (ModConfigMenu.IgnoreActiveEnemies[entity.Type] and not ModConfigMenu.IgnoreActiveEnemies[entity.Type][-1] and not ModConfigMenu.IgnoreActiveEnemies[entity.Type][entity.Variant]))
+		and (not (entity.Type == EntityType.ENTITY_DARK_ESAU and entity:ToNPC().State == 3)) then
 			roomHasDanger = true
 		elseif entity.Type == EntityType.ENTITY_PROJECTILE and entity:ToProjectile().ProjectileFlags & ProjectileFlags.CANT_HIT_PLAYER ~= 1 then
 			roomHasDanger = true
@@ -259,10 +278,13 @@ function ModConfigMenu.PostGameStarted()
 	local potatoVariant = Isaac.GetEntityVariantByName("Potato Dummy")
 	
 	if potatoType and potatoType > 0 then
-		ModConfigMenu.IgnoreActiveEnemies[potatoType] = ModConfigMenu.IgnoreActiveEnemies or {}
+		ModConfigMenu.IgnoreActiveEnemies[potatoType] = ModConfigMenu.IgnoreActiveEnemies[potatoType] or {}
 		ModConfigMenu.IgnoreActiveEnemies[potatoType][potatoVariant] = true
 	end
 	
+
+	--sync game settings
+	ModConfigMenu.SyncGameSettings()
 end
 if ModConfigMenu.Mod.AddCustomCallback then
 	ModConfigMenu.Mod:AddCustomCallback(CustomCallbacks.CCH_GAME_STARTED, ModConfigMenu.PostGameStarted)
@@ -340,14 +362,33 @@ local CornerOpen = ModConfigMenu.GetMenuAnm2Sprite("BackSelect", 2)
 local CornerExit = ModConfigMenu.GetMenuAnm2Sprite("BackSelect", 3)
 
 --fonts
-local Font10 = Font()
-Font10:Load("font/teammeatfont10.fnt")
+local Font10
 
-local Font12 = Font()
-Font12:Load("font/teammeatfont12.fnt")
+local Font12
 
-local Font16Bold = Font()
-Font16Bold:Load("font/teammeatfont16bold.fnt")
+local Font16Bold
+
+local versionPrintFont_mcm, Font10_mcm, Font12_mcm, Font16Bold_mcm = Font(), Font(), Font(), Font()
+local versionPrintFont_official, Font10_official, Font12_official, Font16Bold_official = Font(), Font(), Font(), Font()
+-- load fonts
+versionPrintFont_mcm:Load(GetCurrentModPath() .. "resources/mcm_cn_font/pftempestasevencondensed.fnt")
+Font10_mcm:Load(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont10.fnt")
+Font12_mcm:Load(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont12.fnt")
+Font16Bold_mcm:Load(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont16bold.fnt")
+versionPrintFont_official:Load("font/upheavalextended.fnt")
+Font10_official:Load("font/teammeatfontextended10.fnt")
+Font12_official:Load("font/teammeatfontextended12.fnt")
+Font16Bold_official:Load("font/teammeatfontextended16bold.fnt")
+
+
+ReloadFont = function (isGameOfficialFont)
+	if isGameOfficialFont and Options and Options.Language == "zh" then
+		versionPrintFont, Font10, Font12, Font16Bold = versionPrintFont_official, Font10_official, Font12_official, Font16Bold_official
+	else
+		versionPrintFont, Font10, Font12, Font16Bold = versionPrintFont_mcm, Font10_mcm, Font12_mcm, Font16Bold_mcm
+	end
+end
+
 
 --popups
 ModConfigMenu.PopupGfx = ModConfigMenu.PopupGfx or {}
@@ -419,6 +460,13 @@ function ModConfigMenu.UpdateCategory(categoryName, dataTable)
 		ModConfigMenu.MenuData[categoryID].IsOld = dataTable.IsOld
 	end
 	
+	if dataTable.NameTranslate then
+		ModConfigMenu.MenuData[categoryID].NameTranslate = dataTable.NameTranslate
+	end
+
+	if dataTable.InfoTranslate then
+		ModConfigMenu.MenuData[categoryID].InfoTranslate = dataTable.InfoTranslate
+	end
 end
 
 function ModConfigMenu.SetCategoryInfo(categoryName, info)
@@ -510,6 +558,13 @@ function ModConfigMenu.UpdateSubcategory(categoryName, subcategoryName, dataTabl
 		ModConfigMenu.MenuData[categoryID].Subcategories[subcategoryID].Info = dataTable.Info
 	end
 	
+	if dataTable.NameTranslate then
+		ModConfigMenu.MenuData[categoryID].Subcategories[subcategoryID].NameTranslate = dataTable.NameTranslate
+	end
+
+	if dataTable.InfoTranslate then
+		ModConfigMenu.MenuData[categoryID].Subcategories[subcategoryID].InfoTranslate = dataTable.InfoTranslate
+	end
 end
 
 function ModConfigMenu.RemoveSubcategory(categoryName, subcategoryName)
@@ -720,11 +775,11 @@ function ModConfigMenu.SimpleAddSetting(settingType, categoryName, subcategoryNa
 				
 			elseif settingType == ModConfigMenu.OptionType.KEYBIND_KEYBOARD then
 				
-				local key = "None"
+				local key = "无"
 				
 				if currentValue > -1 then
 				
-					key = "Unknown Key"
+					key = "未知按键"
 					
 					if InputHelper.KeyboardToString[currentValue] then
 						key = InputHelper.KeyboardToString[currentValue]
@@ -736,17 +791,17 @@ function ModConfigMenu.SimpleAddSetting(settingType, categoryName, subcategoryNa
 				
 				if displayDevice then
 					
-					displayString = displayString .. " (keyboard)"
+					displayString = displayString .. " (键盘)"
 					
 				end
 				
 			elseif settingType == ModConfigMenu.OptionType.KEYBIND_CONTROLLER then
 				
-				local key = "None"
+				local key = "无"
 				
 				if currentValue > -1 then
 				
-					key = "Unknown Button"
+					key = "未知按钮"
 					
 					if InputHelper.ControllerToString[currentValue] then
 						key = InputHelper.ControllerToString[currentValue]
@@ -758,7 +813,7 @@ function ModConfigMenu.SimpleAddSetting(settingType, categoryName, subcategoryNa
 				
 				if displayDevice then
 					
-					displayString = displayString .. " (controller)"
+					displayString = displayString .. " (控制器)"
 					
 				end
 				
@@ -811,7 +866,7 @@ function ModConfigMenu.SimpleAddSetting(settingType, categoryName, subcategoryNa
 		
 			local currentValue = ModConfigMenu.Config[categoryName][configTableAttribute]
 		
-			local goBackString = "back"
+			local goBackString = "返回"
 			if ModConfigMenu.Config.LastBackPressed then
 			
 				if InputHelper.KeyboardToString[ModConfigMenu.Config.LastBackPressed] then
@@ -832,18 +887,18 @@ function ModConfigMenu.SimpleAddSetting(settingType, categoryName, subcategoryNa
 					currentSettingString = InputHelper.ControllerToString[currentValue]
 				end
 				
-				keepSettingString = "This setting is currently set to \"" .. currentSettingString .. "\".$newlinePress this button to keep it unchanged.$newline$newline"
+				keepSettingString = "当前设置为 \"" .. currentSettingString .. "\".$newline按此键保持设置不变。$newline"
 				
 			end
 			
 			local deviceString = ""
 			if settingType == ModConfigMenu.OptionType.KEYBIND_KEYBOARD then
-				deviceString = "keyboard"
+				deviceString = "键盘"
 			elseif settingType == ModConfigMenu.OptionType.KEYBIND_CONTROLLER then
-				deviceString = "controller"
+				deviceString = "控制器"
 			end
 			
-			return "Press a button on your " .. deviceString .. " to change this setting.$newline$newline" .. keepSettingString .. "Press \"" .. goBackString .. "\" to go back and clear this setting."
+			return "在" .. deviceString .. "上按任意键改变设置$newline" .. keepSettingString .. "按\"" .. goBackString .. "\"返回并清除设置"
 			
 		end
 		
@@ -1080,6 +1135,41 @@ end
 --------------------------
 ModConfigMenu.SetCategoryInfo("General", "Settings that affect the majority of mods")
 
+local useGameSetting = ModConfigMenu.AddBooleanSetting(
+	"General", --category
+	"SyncGameSettings", --attribute in table
+	true, --default value,
+	"Sync Game Setting", --display text
+	{ --value display text
+		[true] = "Yes",
+		[false] = "No"
+	},
+	"Synchornize settings from game Options menu when game start."
+)
+
+function ModConfigMenu.SyncGameSettings()
+	if REPENTANCE and ModConfigMenu.Config["General"].UseGameSetting then
+		local HUDOffset = math.floor(Options.HUDOffset * 10 + 0.5)
+		if HUDOffset ~= ModConfigMenu.Config["General"].HudOffset then
+			ModConfigMenu.Config["General"].HudOffset = HUDOffset
+			local category = ModConfigMenu.GetSubcategoryIDByName("General","HudOffset")
+			local change = category and category.OnChange
+			if change then
+				change(HUDOffset)
+			end
+		end
+		local ChargeBars = Options.ChargeBars
+		if ChargeBars ~= ModConfigMenu.Config["General"].ChargeBars then
+			ModConfigMenu.Config["General"].ChargeBars = ChargeBars
+			local category = ModConfigMenu.GetSubcategoryIDByName("General","ChargeBars")
+			local change = category and category.OnChange
+			if change then
+				change(ChargeBars)
+			end
+		end
+
+	end
+end
 
 ----------------------
 --HUD OFFSET SETTING--
@@ -1087,7 +1177,7 @@ ModConfigMenu.SetCategoryInfo("General", "Settings that affect the majority of m
 local hudOffsetSetting = ModConfigMenu.AddScrollSetting(
 	"General", --category
 	"HudOffset", --attribute in table
-	0, --default value
+	10, --default value
 	"Hud Offset", --display text
 	"How far from the corners of the screen custom hud elements will be.$newlineTry to make this match your base-game setting."
 )
@@ -1108,7 +1198,6 @@ hudOffsetSetting.OnChange = function(currentValue)
 	
 end
 
-
 --------------------
 --OVERLAYS SETTING--
 --------------------
@@ -1128,7 +1217,7 @@ ModConfigMenu.AddBooleanSetting(
 -----------------------
 --CHARGE BARS SETTING--
 -----------------------
-ModConfigMenu.AddBooleanSetting(
+local ChargeBarsSettings = ModConfigMenu.AddBooleanSetting(
 	"General", --category
 	"ChargeBars", --attribute in table
 	false, --default value
@@ -1139,7 +1228,6 @@ ModConfigMenu.AddBooleanSetting(
 	},
 	"Enable or disable custom charge bar visuals for mod effects, like those from chargable items."
 )
-
 
 ---------------------
 --BIG BOOKS SETTING--
@@ -1175,7 +1263,6 @@ ModConfigMenu.AddNumberSetting(
 	"Choose how often a voice-over will play when a pocket item (pill or card) is used."
 )
 
-
 --------------------------
 --GENERAL SETTINGS CLOSE--
 --------------------------
@@ -1192,7 +1279,7 @@ ModConfigMenu.AddText("General", "all mods which support them")
 
 ModConfigMenu.SetCategoryInfo("Mod Config Menu", "Settings specific to Mod Config Menu.$newlineChange keybindings for the menu here.")
 
-ModConfigMenu.AddTitle("Mod Config Menu", "Version " .. tostring(ModConfigMenu.Version) .. " !") --VERSION INDICATOR
+ModConfigMenu.AddTitle("Mod Config Menu", "版本 " .. tostring(ModConfigMenu.Version) .. " (集成汉化)!") --VERSION INDICATOR
 
 ModConfigMenu.AddSpace("Mod Config Menu") --SPACE
 
@@ -1282,6 +1369,28 @@ local resetKeybindSetting = ModConfigMenu.AddKeyboardSetting(
 
 resetKeybindSetting.IsResetKeybind = true
 
+-----------------
+--USE GAME FONT--
+-----------------
+local officialFontAvaliable = true
+useGameFont = ModConfigMenu.AddBooleanSetting(
+	"Mod Config Menu", --category
+	"UseGameFont", --attribute in table
+	false, --default value
+	"Use Game Font(Chinese Needed)", --display text
+	{ --value display text
+		[true] = "Yes",
+		[false] = "No"
+	},
+	"Use the Chinese font that comes with the game instead of the font in MCM."
+)
+local oldUseGameFontOnChange = useGameFont.OnChange
+useGameFont.OnChange = function(currentValue)
+	oldUseGameFontOnChange(currentValue)
+	ReloadFont(currentValue)
+end
+
+ReloadFont(false)
 
 -----------------
 --SHOW CONTROLS--
@@ -1621,9 +1730,9 @@ function ModConfigMenu.PostRender()
 			openMenuButtonString = InputHelper.KeyboardToString[openMenuButton]
 		end
 		
-		local text = "Press " .. openMenuButtonString .. " to open Mod Config Menu"
+		local text = "按" .. openMenuButtonString .. "打开Mod配置菜单"
 		local versionPrintColor = KColor(1, 1, 0, (math.min(versionPrintTimer, 60)/60) * 0.5)
-		versionPrintFont:DrawString(text, 0, bottomRight.Y - 28, versionPrintColor, bottomRight.X, true)
+		versionPrintFont:DrawStringUTF8(text, 0, bottomRight.Y - 28, versionPrintColor, bottomRight.X, true)
 		
 	end
 	
@@ -1634,7 +1743,7 @@ function ModConfigMenu.PostRender()
 	
 		local text = restartWarnMessage or rerunWarnMessage
 		local warningPrintColor = KColor(1, 0, 0, 1)
-		versionPrintFont:DrawString(text, 0, bottomRight.Y - 28, warningPrintColor, bottomRight.X, true)
+		versionPrintFont:DrawStringUTF8(text, 0, bottomRight.Y - 28, warningPrintColor, bottomRight.X, true)
 		
 	end
 
@@ -2535,7 +2644,7 @@ function ModConfigMenu.PostRender()
 			--text
 			if lastLeftPos.Y > leftPosTopmost and lastLeftPos.Y < leftPosBottommost then
 			
-				local textToDraw = tostring(ModConfigMenu.MenuData[categoryIndex].Name)
+				local textToDraw = tostring(ModConfigMenu.MenuData[categoryIndex].NameTranslate or ModConfigMenu.MenuData[categoryIndex].Name)
 				
 				local color = leftFontColor
 				--[[
@@ -2545,7 +2654,7 @@ function ModConfigMenu.PostRender()
 				]]
 				
 				local posOffset = Font12:GetStringWidthUTF8(textToDraw)/2
-				Font12:DrawString(textToDraw, lastLeftPos.X - posOffset, lastLeftPos.Y - 8, color, 0, true)
+				Font12:DrawStringUTF8(textToDraw, lastLeftPos.X - posOffset, lastLeftPos.Y - 8, color, 0, true)
 				
 				--cursor
 				if configMenuPositionCursorCategory == categoryIndex then
@@ -2617,7 +2726,7 @@ function ModConfigMenu.PostRender()
 							local posOffset = 0
 						
 							if thisSubcategory.Name then
-								local textToDraw = thisSubcategory.Name
+								local textToDraw = thisSubcategory.NameTranslate or thisSubcategory.Name
 								
 								textToDraw = tostring(textToDraw)
 								
@@ -2631,7 +2740,7 @@ function ModConfigMenu.PostRender()
 								end
 								
 								posOffset = Font12:GetStringWidthUTF8(textToDraw)/2
-								Font12:DrawString(textToDraw, lastSubcategoryPos.X - posOffset, lastSubcategoryPos.Y - 8, color, 0, true)
+								Font12:DrawStringUTF8(textToDraw, lastSubcategoryPos.X - posOffset, lastSubcategoryPos.Y - 8, color, 0, true)
 							end
 							
 							--cursor
@@ -2708,7 +2817,7 @@ function ModConfigMenu.PostRender()
 					and thisOption.Display then
 					
 						local optionType = thisOption.Type
-						local optionDisplay = thisOption.Display
+						local optionDisplay = thisOption.DisplayTranslate or thisOption.Display
 						local optionColor = thisOption.Color
 		
 						local useAltSlider = thisOption.AltSlider
@@ -2754,7 +2863,7 @@ function ModConfigMenu.PostRender()
 							end
 							
 							posOffset = font:GetStringWidthUTF8(textToDraw)/2
-							font:DrawString(textToDraw, lastOptionPos.X - posOffset, lastOptionPos.Y - heightOffset, color, 0, true)
+							font:DrawStringUTF8(textToDraw, lastOptionPos.X - posOffset, lastOptionPos.Y - heightOffset, color, 0, true)
 						elseif optionType == ModConfigMenu.OptionType.SCROLL then
 							local numberToShow = optionDisplay
 							
@@ -2794,7 +2903,7 @@ function ModConfigMenu.PostRender()
 										
 										scrollOffset = posOffset
 										posOffset = Font10:GetStringWidthUTF8(textToDraw)/2
-										Font10:DrawString(textToDraw, lastOptionPos.X - posOffset, lastOptionPos.Y - 6, color, 0, true)
+										Font10:DrawStringUTF8(textToDraw, lastOptionPos.X - posOffset, lastOptionPos.Y - 6, color, 0, true)
 										
 										scrollOffset = posOffset - (Font10:GetStringWidthUTF8(textToDrawPreScroll)+scrollOffset)
 										numberToShow = numberString
@@ -2868,12 +2977,12 @@ function ModConfigMenu.PostRender()
 		MenuOverlaySprite:Render(centerPos, vecZero, vecZero)
 		
 		--title
-		local titleText = "Mod Config Menu"
+		local titleText = "mod配置菜单" -- "Mod Config Menu"
 		if configMenuInSubcategory then
-			titleText = tostring(currentMenuCategory.Name)
+			titleText = tostring(currentMenuCategory.NameTranslate or currentMenuCategory.Name)
 		end
 		local titleTextOffset = Font16Bold:GetStringWidthUTF8(titleText)/2
-		Font16Bold:DrawString(titleText, titlePos.X - titleTextOffset, titlePos.Y - 9, mainFontColor, 0, true)
+		Font16Bold:DrawStringUTF8(titleText, titlePos.X - titleTextOffset, titlePos.Y - 9, mainFontColor, 0, true)
 		
 		--info
 		local infoTable = nil
@@ -2882,18 +2991,18 @@ function ModConfigMenu.PostRender()
 		if configMenuInOptions then
 		
 			if currentMenuOption and currentMenuOption.Info then
-				infoTable = currentMenuOption.Info
+				infoTable = currentMenuOption.InfoTranslate or currentMenuOption.Info
 			end
 			
 		elseif configMenuInSubcategory then
 		
 			if currentMenuSubcategory and currentMenuSubcategory.Info then
-				infoTable = currentMenuSubcategory.Info
+				infoTable = currentMenuSubcategory.InfoTranslate or currentMenuSubcategory.Info
 			end
 			
 		elseif currentMenuCategory and currentMenuCategory.Info then
 			
-			infoTable = currentMenuCategory.Info
+			infoTable = currentMenuCategory.InfoTranslate or currentMenuCategory.Info
 			if currentMenuCategory.IsOld then
 				isOldInfo = true
 			end
@@ -2919,10 +3028,10 @@ function ModConfigMenu.PostRender()
 				if isOldInfo then
 					color = optionsFontColorTitle
 				end
-				Font10:DrawString(textToDraw, lastInfoPos.X - posOffset, lastInfoPos.Y - 6, color, 0, true)
+				Font10:DrawStringUTF8(textToDraw, lastInfoPos.X - posOffset, lastInfoPos.Y - 6, color, 0, true)
 				
 				--pos mod
-				lastInfoPos = lastInfoPos + Vector(0,10)
+				lastInfoPos = lastInfoPos + Vector(0,Font10:GetLineHeight())
 				
 			end
 			
@@ -2949,7 +3058,7 @@ function ModConfigMenu.PostRender()
 		
 			PopupSprite:Render(centerPos, vecZero, vecZero)
 			
-			local popupTable = currentMenuOption.Popup
+			local popupTable = currentMenuOption.PopupTranslate or currentMenuOption.Popup
 			
 			if not popupTable then
 			
@@ -2979,10 +3088,10 @@ function ModConfigMenu.PostRender()
 					--text
 					local textToDraw = tostring(popupTableDisplay[line])
 					local posOffset = Font10:GetStringWidthUTF8(textToDraw)/2
-					Font10:DrawString(textToDraw, lastPopupPos.X - posOffset, lastPopupPos.Y - 6, mainFontColor, 0, true)
+					Font10:DrawStringUTF8(textToDraw, lastPopupPos.X - posOffset, lastPopupPos.Y - 6, mainFontColor, 0, true)
 					
 					--pos mod
-					lastPopupPos = lastPopupPos + Vector(0,10)
+					lastPopupPos = lastPopupPos + Vector(0,Font10:GetLineHeight())
 					
 				end
 			
@@ -3009,7 +3118,7 @@ function ModConfigMenu.PostRender()
 					goBackString = InputHelper.ControllerToString[ModConfigMenu.Config.LastBackPressed]
 				end
 			end
-			Font10:DrawString(goBackString, (bottomLeft.X - Font10:GetStringWidthUTF8(goBackString)/2) + 36, bottomLeft.Y - 24, mainFontColor, 0, true)
+			Font10:DrawStringUTF8(goBackString, (bottomLeft.X - Font10:GetStringWidthUTF8(goBackString)/2) + 36, bottomLeft.Y - 24, mainFontColor, 0, true)
 
 			--select
 			local bottomRight = ScreenHelper.GetScreenBottomRight(0)
@@ -3041,7 +3150,7 @@ function ModConfigMenu.PostRender()
 						selectString = InputHelper.ControllerToString[ModConfigMenu.Config.LastSelectPressed]
 					end
 				end
-				Font10:DrawString(selectString, (bottomRight.X - Font10:GetStringWidthUTF8(selectString)/2) - 36, bottomRight.Y - 24, mainFontColor, 0, true)
+				Font10:DrawStringUTF8(selectString, (bottomRight.X - Font10:GetStringWidthUTF8(selectString)/2) - 36, bottomRight.Y - 24, mainFontColor, 0, true)
 				
 			end
 			
@@ -3065,6 +3174,14 @@ function ModConfigMenu.PostRender()
 			
 		end
 		
+		for _, entity in pairs(Isaac.GetRoomEntities()) do
+			if entity.Type == EntityType.ENTITY_DARK_ESAU then
+				local data = entity:ToNPC():GetData()
+				data.ConfigMenuEsauPosition = nil
+				data.ConfigMenuEsauVelocity = nil
+			end
+		end
+
 		configMenuInSubcategory = false
 		configMenuInOptions = false
 		configMenuInPopup = false
@@ -3148,6 +3265,21 @@ function ModConfigMenu.InputAction(_, entity, inputHook, buttonAction)
 end
 ModConfigMenu.Mod:AddCallback(ModCallbacks.MC_INPUT_ACTION, ModConfigMenu.InputAction)
 
+function ModConfigMenu.DarkEsauPreNpcUpdate(_, entityNPC)
+	if ModConfigMenu.IsVisible then
+		local data = entityNPC:GetData()
+		if not data.ConfigMenuEsauPosition then
+			data.ConfigMenuEsauPosition = entityNPC.Position
+			data.ConfigMenuEsauVelocity = entityNPC.Velocity
+		end
+		entityNPC.Position = data.ConfigMenuEsauPosition
+		entityNPC.Velocity = data.ConfigMenuEsauVelocity
+		return true
+	end
+end
+
+ModConfigMenu.Mod:AddCallback(ModCallbacks.MC_PRE_NPC_UPDATE,ModConfigMenu.DarkEsauPreNpcUpdate, EntityType.ENTITY_DARK_ESAU)
+
 --console commands that toggle the menu
 local toggleCommands = {
 	["modconfigmenu"] = true,
@@ -3188,5 +3320,331 @@ end
 Isaac.DebugString("Mod Config Menu v" .. ModConfigMenu.Version .. " loaded!")
 print("Mod Config Menu v" .. ModConfigMenu.Version .. " loaded!")
 
+-- code added by @frto027(steamid/github/bilibili)
+
+-------------
+--Translate--
+-------------
+
+-- i18n means internationalization
+ModConfigMenu.i18n = "Chinese"
+
+-- nameTranslate is string
+function ModConfigMenu.SetCategoryNameTranslate(categoryName, nameTranslate)
+
+	if type(categoryName) ~= "string" and type(categoryName) ~= "number" then
+		error("ModConfigMenu.SetCategoryNameTranslate - No valid category name provided", 2)
+	end
+
+	ModConfigMenu.UpdateCategory(categoryName, {
+		NameTranslate = nameTranslate
+	})
+
+end
+
+-- nameTranslate is string
+function ModConfigMenu.SetSubcategoryNameTranslate(categoryName, subcategoryName, nameTranslate)
+
+	if type(categoryName) ~= "string" and type(categoryName) ~= "number" then
+		error("ModConfigMenu.SetSubcategoryNameTranslate - No valid category name provided", 2)
+	end
+
+	ModConfigMenu.UpdateSubcategory(categoryName, subcategoryName, {
+		NameTranslate = nameTranslate
+	})
+
+end
+
+-- infoTranslate is string
+function ModConfigMenu.SetCategoryInfoTranslate(categoryName, infoTranslate)
+
+	if type(categoryName) ~= "string" and type(categoryName) ~= "number" then
+		error("ModConfigMenu.SetCategoryInfoTranslate - No valid category name provided", 2)
+	end
+
+	ModConfigMenu.UpdateCategory(categoryName, {
+		InfoTranslate = infoTranslate
+	})
+
+end
+
+-- infoTranslate is string
+function ModConfigMenu.SetSubcategoryInfoTranslate(categoryName, subcategoryName, infoTranslate)
+
+	if type(categoryName) ~= "string" and type(categoryName) ~= "number" then
+		error("ModConfigMenu.SetSubcategoryInfoTranslate - No valid category name provided", 2)
+	end
+
+	ModConfigMenu.UpdateSubcategory(categoryName, subcategoryName, {
+		InfoTranslate = infoTranslate
+	})
+
+end
+
+function ModConfigMenu.GetSubcategoryOptions(categoryName, subcategoryName)
+	if type(categoryName) ~= "string" and type(categoryName) ~= "number" then
+		error("ModConfigMenu.GetSubcategoryOptions - No valid category name provided", 2)
+	end
+
+	subcategoryName = subcategoryName or "Uncategorized"
+
+	if type(subcategoryName) ~= "string" and type(subcategoryName) ~= "number" then
+		error("ModConfigMenu.GetSubcategoryOptions - No valid subcategory name provided", 2)
+	end
+
+	local categoryID = ModConfigMenu.GetCategoryIDByName(categoryName)
+	if categoryID == nil then
+		categoryID = #ModConfigMenu.MenuData+1
+		ModConfigMenu.MenuData[categoryID] = {}
+		ModConfigMenu.MenuData[categoryID].Name = tostring(categoryName)
+		ModConfigMenu.MenuData[categoryID].Subcategories = {}
+	end
+	
+	local subcategoryID = ModConfigMenu.GetSubcategoryIDByName(categoryID, subcategoryName)
+	if subcategoryID == nil then
+		subcategoryID = #ModConfigMenu.MenuData[categoryID].Subcategories+1
+		ModConfigMenu.MenuData[categoryID].Subcategories[subcategoryID] = {}
+		ModConfigMenu.MenuData[categoryID].Subcategories[subcategoryID].Name = tostring(subcategoryName)
+		ModConfigMenu.MenuData[categoryID].Subcategories[subcategoryID].Options = {}
+	end
+
+	return ModConfigMenu.MenuData[categoryID].Subcategories[subcategoryID].Options
+end
+
+function ModConfigMenu.OptionsPairs(categoryName, subcategoryName)
+	return pairs(ModConfigMenu.GetSubcategoryOptions(categoryName, subcategoryName))
+end
+----------
+-- texts is {string:string},  target is string, strict match
+function ModConfigMenu.TranslateOptionsTextWithTable(categoryName, subcategoryName, texts, settingsTableKey)
+	local translateKey = settingsTableKey .. "Translate"
+	for _,options in ModConfigMenu.OptionsPairs(categoryName, subcategoryName) do
+		if type(options[settingsTableKey]) == "string" then
+			options[translateKey] = texts[options[settingsTableKey]] or options[translateKey]
+		elseif type(options[settingsTableKey]) == "table" then
+			options[translateKey] = options[translateKey] or {}
+			for _,v in pairs(options[settingsTableKey]) do
+				table.insert(options[translateKey],texts[v] or v)
+			end
+		end
+	end
+end
+
+-- translateFunc is function(string):string, target is function
+function ModConfigMenu.TranslateOptionsWithFunc(categoryName, subcategoryName, translateFunc, settingsTableKey)
+	local translateBuffer = {}
+	local translatedBuffer = {}
+	local translateKey = settingsTableKey .. "Translate"
+	for _, option in ModConfigMenu.OptionsPairs(categoryName,subcategoryName) do
+		local Display = option[settingsTableKey]
+		if type(option[settingsTableKey]) == "function" then
+			option[translateKey] = function(a,b,c,d,e,f,g,h)
+				local result = Display(a,b,c,d,e,f,g,h)
+				if type(result) == "string" then
+					if translatedBuffer[result] == nil then
+						translatedBuffer[result] = true
+						translateBuffer[result] = translateFunc(result)
+					end
+					return translateBuffer[result]
+				end
+				if type(result) == "table" then
+					for i = 1,#result do
+						local value = result[i]
+						if not translatedBuffer[value] then
+							translatedBuffer[value] = true
+							translateBuffer[value] = translateFunc(value)		
+						end
+						result[i] = translateBuffer[value]
+					end
+					return result
+				end
+				return result
+			end
+		end
+	end
+end
+
+--translates is {{key,value},{key,value}},(partical match) target is function, but translate the return value
+function ModConfigMenu.TranslateOptionsWithTable(categoryName, subcategoryName, translates,settingsTableKey)
+
+	ModConfigMenu.TranslateOptionsWithFunc(categoryName, subcategoryName, function(text)
+		for _ , v in pairs(translates) do
+			text = string.gsub(text, v[1], v[2])
+		end
+		return text
+	end,settingsTableKey)
+end
+---------Display----------
+function ModConfigMenu.TranslateOptionsDisplayTextWithTable(categoryName, subcategoryName, texts)
+	if texts == nil then
+		subcategoryName, texts = nil, subcategoryName, texts
+	end
+	ModConfigMenu.TranslateOptionsTextWithTable(categoryName,subcategoryName,texts,"Display")
+end
+function ModConfigMenu.TranslateOptionsDisplayWithFunc(categoryName, subcategoryName, translateFunc)
+	if translateFunc == nil then
+		subcategoryName, translateFunc = nil, subcategoryName
+	end
+	ModConfigMenu.TranslateOptionsWithFunc(categoryName,subcategoryName,translateFunc,"Display")
+end
+function ModConfigMenu.TranslateOptionsDisplayWithTable(categoryName, subcategoryName, translates)
+	if translates == nil then
+		subcategoryName, translates = nil, subcategoryName
+	end
+	ModConfigMenu.TranslateOptionsWithTable(categoryName,subcategoryName,translates,"Display")
+end
+--------Info------------
+function ModConfigMenu.TranslateOptionsInfoTextWithTable(categoryName, subcategoryName, texts)
+	if texts == nil then
+		subcategoryName, texts = nil, subcategoryName
+	end
+	ModConfigMenu.TranslateOptionsTextWithTable(categoryName,subcategoryName,texts,"Info")
+end
+function ModConfigMenu.TranslateOptionsInfoWithFunc(categoryName, subcategoryName, translateFunc)
+	if translateFunc == nil then
+		subcategoryName, translateFunc = nil, subcategoryName
+	end
+	ModConfigMenu.TranslateOptionsWithFunc(categoryName,subcategoryName,translateFunc,"Info")
+end
+function ModConfigMenu.TranslateOptionsInfoWithTable(categoryName, subcategoryName, translates)
+	if translates == nil then
+		subcategoryName, translates = nil, subcategoryName
+	end
+	ModConfigMenu.TranslateOptionsWithTable(categoryName,subcategoryName,translates,"Info")
+end
+---------Popup----------------
+function ModConfigMenu.TranslateOptionsPopupTextWithTable(categoryName, subcategoryName, texts)
+	if texts == nil then
+		subcategoryName, texts = nil, subcategoryName, texts
+	end
+	ModConfigMenu.TranslateOptionsTextWithTable(categoryName,subcategoryName,texts,"Popup")
+end
+function ModConfigMenu.TranslateOptionsPopupWithFunc(categoryName, subcategoryName, translateFunc)
+	if translateFunc == nil then
+		subcategoryName, translateFunc = nil, subcategoryName
+	end
+	ModConfigMenu.TranslateOptionsWithFunc(categoryName,subcategoryName,translateFunc,"Popup")
+end
+function ModConfigMenu.TranslateOptionsPopupWithTable(categoryName, subcategoryName, translates)
+	if translates == nil then
+		subcategoryName, translates = nil, subcategoryName
+	end
+	ModConfigMenu.TranslateOptionsWithTable(categoryName,subcategoryName,translates,"Popup")
+end
+---------Translate---------------
+ModConfigMenu.SetCategoryNameTranslate("General", "通用")
+ModConfigMenu.SetCategoryInfoTranslate("General","影响大多数mod的设置项")
+ModConfigMenu.TranslateOptionsDisplayTextWithTable("General",{
+	["These settings apply to"]="此菜单项适用于",
+	["all mods which support them"]="所有支持此菜单的mod",
+})
+ModConfigMenu.TranslateOptionsDisplayWithTable("General",{
+	{"Sync Game Setting","同步游戏设置"},
+	{"Hud Offset", "界面位置"},
+	{"Overlays", "画面遮罩层"},
+	{"Charge Bars", "蓄力条"},
+	{"Bigbooks", "书本动画"},
+	{"On", "启用"},
+	{"Off", "禁用"},
+	{"Yes","是"},
+	{"No","否"},
+	{"Announcer", "语音播报"},
+	{"Sometimes", "偶尔"},
+	{"Never", "从不"},
+	{"Always", "总是"},
+})
+ModConfigMenu.TranslateOptionsInfoTextWithTable("General", {
+	["Synchornize settings from game Options menu when game start."]
+		= "在游戏开始时 将游戏的设置选项同步到此页",
+	["How far from the corners of the screen custom hud elements will be.$newlineTry to make this match your base-game setting."] 
+		= "自定义hud与屏幕角落的距离。$newline令此项与游戏的设置保持一致。",
+	["Enable or disable custom visual overlays, like screen-wide fog."]
+		= "启用或禁用自定义的视觉遮罩层， 例如烟雾效果",
+	["Enable or disable custom charge bar visuals for mod effects, like those from chargable items."]
+		= "启用或禁用mod效果的自定义蓄力条， 例如来自可充能道具的蓄力条",
+	["Enable or disable custom bigbook overlays which can appear when an active item is used."]
+		= "启用或禁用在使用主动道具时显示的 书本动画",
+	["Choose how often a voice-over will play when a pocket item (pill or card) is used."]
+		= "设置使用药丸/卡牌时, 播报语音的频率"
+})
+
+ModConfigMenu.SetCategoryNameTranslate("Mod Config Menu", "mod配置菜单")
+ModConfigMenu.SetCategoryInfoTranslate("Mod Config Menu", "mod配置菜单设置项$newline在这里修改菜单的键位")
+ModConfigMenu.TranslateOptionsDisplayTextWithTable("Mod Config Menu",{
+	["F10 will always open this menu."] = "始终可以使用F10打开当前页面",
+})
+
+ModConfigMenu.TranslateOptionsDisplayWithTable("Mod Config Menu",{
+	{"Open Menu", "开启菜单"},
+	-- {"keyboard", "键盘"},
+	-- {"controller", "控制器"},
+	-- {"None", "无"},
+	-- {"Unknown Key", "未知按键"},
+	-- {"Unknown Button", "未知按钮"},
+	{"Hide HUD", "隐藏HUD"},
+	{"Reset To Default Keybind", "重置默认键位"},
+	{"Show Controls", "显示控件"},
+	{"Use Game Font%(Chinese Needed%)","使用官方字体(需游戏中文)"},
+	{"Disable Legacy Warnings", "停用过时警告"},
+	{"On", "启用"},
+	{"Off", "禁用"},
+	{"Yes","是"},
+	{"No","否"},
+
+})
+
+ModConfigMenu.TranslateOptionsInfoTextWithTable("Mod Config Menu",{
+	["Choose what button on your keyboard will open Mod Config Menu."]
+		= "选择打开mod配置菜单的键盘按键",
+	["Choose what button on your controller will open Mod Config Menu."]
+		= "选择打开mod配置菜单的控制器按钮",
+	["Enable or disable the hud when this menu is open."]
+		= "当前菜单中是否显示HUD",
+	["Press this button on your keyboard to reset a setting to its default value."]
+		= "按下此键以重置一个设置到默认键位",
+	["Use the Chinese font that comes with the game instead of the font in MCM."]
+		= "使用游戏自带的中文字体， 而不是Mod配置菜单自带的字体",
+	["Disable this to remove the back and select widgets at the lower corners of the screen and remove the bottom start-up message."]
+		= "禁用此项可以移除屏幕角落的 “返回”和“选择”控件 与开局的信息提示",
+	["Use this setting to prevent warnings from being printed to the console for mods that use outdated features of Mod Config Menu."]
+		= "对于使用了过时MCM接口的mod， 不再打印警告信息到控制台"
+})
+
+-- changed in previous program
+-- ModConfigMenu.TranslateOptionsPopupWithTable("Mod Config Menu",{
+-- 	{"This setting is currently set to \"","当前设置为\""},
+-- 	{"\".$newlinePress this button to keep it unchanged.$newline$newline","\".$newline按此键保持设置不变。$newline"},
+-- 	{"Press a button on your ","在"},
+-- 	{" to change this setting.$newline$newline", "上按任意键改变设置$newline"},
+-- 	{"Press \"", "按\""},
+-- 	{"\" to go back and clear this setting.","\"返回并清除设置"},
+-- 	{"back","返回"},
+-- 	{"keyboard","键盘"},
+-- 	{"controller","控制器"},
+-- })
+
+----------------------------------
+-- ControllerToString translate --
+----------------------------------
+
+for k in pairs(InputHelper.ControllerToString) do
+	for _,rep in pairs({
+		{"LEFT BUMPER","左肩键(LB)"},
+		{"RIGHT BUMPER","右肩键(RB)"},
+		{"LEFT TRIGGER","左扳机(LT)"},
+		{"RIGHT BUMPER","右扳机(RT)"},
+		{"RIGHT",  "右"},
+		{"LEFT",  "左"},
+		{"UP",  "上"},
+		{"DOWN",  "下"},
+		{"BACK",  "返回"},
+		{"START", "开始"},
+		{"DPAD",  "十字键"},
+		{"STICK",  "摇杆"},
+		{" ", ""},
+	})do
+		InputHelper.ControllerToString[k] = string.gsub(InputHelper.ControllerToString[k],rep[1],rep[2])
+	end
+end
 
 return ModConfigMenu

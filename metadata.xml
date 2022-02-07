@@ -1,46 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-    <name>!!Mod Config Menu</name>
-    <directory>!!mod config menu</directory>
-    <id>1603631350</id>
-    <description>The Mod Config Menu is a mod that adds a new menu to the game that enables other mods to provide a simple and easy way for the player to configure them.
+    <name>!!Mod Config Menu Chinese</name>
+    <directory>mod_config_menu_cn</directory>
+    <id>2494192799</id>
+    <description>这是Mod Config Menu的中文版本（中文字体+翻译api支持）
+This is the Chinese version of Mod Config Menu.
+If you don't speak Chinese, don't use it. [strike]No new features will be added to this mod, but [/strike]if someone else maintains the original version of MCM, I may follow in to ensure compatibility.
 
-This mod does not do much on its own, to get into the real action you should download a mod which supports this menu.
+Chinese font support is added.
+The translation API is added to the original logic.
 
+Original mod link (thanks to the original author piber):
+https://steamcommunity.com/sharedfiles/filedetails/?id=1603631350
 
-[h1]My mods dont work![/h1]
-- Make sure you have the latest version of mod config menu, visible in the mod config menu category
-- Restart the game!
-
-If you still have issues even after doing all this, please report them to me, and provide any error logs if you have any.
-
-
-[h1]Navigation[/h1]
-
-Keyboard:
-Use the arrow keys or WASD keys to move around
-
-Esc, backspace, or Q can be used to go back
-
-E, space, or enter can be used to select an item.
-
-By default you can open the menu by pressing L.
-
-F10 will also always open the menu, this cannot be changed.
-
-Controller:
-Both control sticks can be used to move around, press B to go back, A to select an item.
-
-By default you can open the menu by pressing down the right control stick.
-
-
-
-Join my discord server!
-https://discord.com/invite/uJEFFdb
-
-Support me on patreon!
-https://www.patreon.com/piber20</description>
-    <version>1.37</version>
+I'm not the original author. Sorry but I don't have enough time to maintain the functions. Please don't ask anything other than the Chinese version here.</description>
+    <version>1.3</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
 </metadata>
