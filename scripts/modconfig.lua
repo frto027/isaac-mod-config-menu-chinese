@@ -1377,12 +1377,12 @@ useGameFont = ModConfigMenu.AddBooleanSetting(
 	"Mod Config Menu", --category
 	"UseGameFont", --attribute in table
 	false, --default value
-	"Use Game Font(Chinese Needed)", --display text
+	"Use Game Font", --display text
 	{ --value display text
 		[true] = "Yes",
 		[false] = "No"
 	},
-	"Use the Chinese font that comes with the game instead of the font in MCM."
+	"Use the Chinese font that comes with the game instead of the font in MCM.Only takes effect when the language is Chinese."
 )
 local oldUseGameFontOnChange = useGameFont.OnChange
 useGameFont.OnChange = function(currentValue)
@@ -1655,32 +1655,95 @@ function ModConfigMenu.ConvertDisplayToTextTable(displayValue, lineWidth, font)
 	end
 
 	--dynamic string new line creation, based on code by wofsauge
+	--支持UTF8的简易自动换行算法
 	local textTableDisplayAfterWordLength = {}
 	for lineIndex=1, #textTableDisplayAfterNewlines do
-	
-		local line = textTableDisplayAfterNewlines[lineIndex]
+		local str = textTableDisplayAfterNewlines[lineIndex]
 		local curLength = 0
-		local text = ""
-		for word in string.gmatch(tostring(line), "([^%s]+)") do
-		
-			local wordLength = font:GetStringWidthUTF8(word)
+		local text = {}
 
-			if curLength + wordLength <= lineWidth or curLength < 12 then
-			
-				text = text .. word .. " "
-				curLength = curLength + wordLength
-				
-			else
-			
-				table.insert(textTableDisplayAfterWordLength, text)
-				text = word .. " "
-				curLength = wordLength
-				
+		local cursor = 1
+		local word_begin_index = 1
+
+		local byte = string.byte -- for speed up
+		local sub = string.sub
+		local byte_space = string.byte(' ')
+
+		while cursor <= #str do
+			-- ascii word: 0b0xxxxxxx
+			-- utf8 word (sequence): 0b11xxxxxx 0b10xxxxxx 0b10xxxxxx ... 0b10xxxxxx
+			-- see https://en.wikipedia.org/wiki/UTF-8
+			-- we can only break after space, or before 0b11xxxxxx
+			local cur, next = byte(str,cursor), byte(str,cursor+1)
+			if
+				-- cond#1: we can break at the end of string
+				cursor == #str or
+				-- cond#2: we can break after space
+				cur == byte_space or 
+				-- handle utf8 characters
+				-- cond#3: we can break if the next character is 0b11xxxxxx
+				((next & 0xC0) == 0xC0) or 
+				-- cond#4: we can also break if the current is 0b10xxxxxx while the next is ascii but not space
+				(((cur & 0xC0) == 0x80) and (next~= byte_space and (next & 0x80) == 0x00))  
+				then
+					--[[
+						-------------------ascii only---------------
+						word will be separated by spaces.
+						wordA |wordB  |wordC |^%@&Q%#^&#@!! |aksldj
+							↑
+							cond#2
+						we may break after every space.
+						spaces | | | | | |woops
+							↑
+							cond#2
+						-------------------UTF8 only----------------
+						word is 0x11xxxxxx followed by several 0x10xxxxxx until the next 0x11xxxxxx (not included)
+						你|好|，|世|界|！|↑|↑|↑|↑
+						↑
+						cond#3
+						byte data of a word:
+						[0x11xxxxxx,0x10xxxxxx,0x10xxxxxx, (next is 0x11xxxxxx, cond#3)] 
+						--------------------ascii->utf8------------
+						utf8 word must start with 0x11xxxxxx, so cond#3 split before it.
+						word|世|界
+							|  ↑
+							↑  cond#3
+							cond#3
+						
+						world |means |世|界
+									↑
+									cond#2
+						-------------------utf8->ascii--------------
+						世|界|是|world
+							| ↑
+							↑ cond#4
+							cond#3
+						世|界|是 |world
+							|   ↑
+							↑   cond#2
+							cond#3
+					]]
+
+					-- we can break after str[cursor]
+					local word = sub(str, word_begin_index, cursor)
+					local wordLength = font:GetStringWidthUTF8(word)
+					
+					if curLength + wordLength <= lineWidth or curLength < 17 then
+						table.insert(text, word)
+						curLength = curLength + wordLength
+					else
+						table.insert(textTableDisplayAfterWordLength, table.concat(text))
+						text = { word }
+						curLength = wordLength
+					end
+
+					-- next word starts here
+					word_begin_index = cursor + 1
 			end
-			
+			cursor = cursor + 1
 		end
-		table.insert(textTableDisplayAfterWordLength, text)
-		
+
+		table.insert(textTableDisplayAfterWordLength, table.concat(text))
 	end
 	
 	return textTableDisplayAfterWordLength
@@ -1732,7 +1795,7 @@ function ModConfigMenu.PostRender()
 		
 		local text = "按" .. openMenuButtonString .. "打开Mod配置菜单"
 		local versionPrintColor = KColor(1, 1, 0, (math.min(versionPrintTimer, 60)/60) * 0.5)
-		versionPrintFont:DrawStringUTF8(text, 0, bottomRight.Y - 28, versionPrintColor, bottomRight.X, true)
+		versionPrintFont:DrawStringUTF8(text, 0, bottomRight.Y - 28, versionPrintColor, math.floor(bottomRight.X), true)
 		
 	end
 	
@@ -1743,7 +1806,7 @@ function ModConfigMenu.PostRender()
 	
 		local text = restartWarnMessage or rerunWarnMessage
 		local warningPrintColor = KColor(1, 0, 0, 1)
-		versionPrintFont:DrawStringUTF8(text, 0, bottomRight.Y - 28, warningPrintColor, bottomRight.X, true)
+		versionPrintFont:DrawStringUTF8(text, 0, bottomRight.Y - 28, warningPrintColor, math.floor(bottomRight.X), true)
 		
 	end
 
@@ -3584,7 +3647,7 @@ ModConfigMenu.TranslateOptionsDisplayWithTable("Mod Config Menu",{
 	{"Hide HUD", "隐藏HUD"},
 	{"Reset To Default Keybind", "重置默认键位"},
 	{"Show Controls", "显示控件"},
-	{"Use Game Font%(Chinese Needed%)","使用官方字体(需游戏中文)"},
+	{"Use Game Font","使用官方字体"},
 	{"Disable Legacy Warnings", "停用过时警告"},
 	{"On", "启用"},
 	{"Off", "禁用"},
@@ -3602,8 +3665,8 @@ ModConfigMenu.TranslateOptionsInfoTextWithTable("Mod Config Menu",{
 		= "当前菜单中是否显示HUD",
 	["Press this button on your keyboard to reset a setting to its default value."]
 		= "按下此键以重置一个设置到默认键位",
-	["Use the Chinese font that comes with the game instead of the font in MCM."]
-		= "使用游戏自带的中文字体， 而不是Mod配置菜单自带的字体",
+	["Use the Chinese font that comes with the game instead of the font in MCM.Only takes effect when the language is Chinese."]
+		= "使用游戏自带的中文字体, 而不是Mod配置菜单自带的字体。仅启用中文时有效。",
 	["Disable this to remove the back and select widgets at the lower corners of the screen and remove the bottom start-up message."]
 		= "禁用此项可以移除屏幕角落的 “返回”和“选择”控件 与开局的信息提示",
 	["Use this setting to prevent warnings from being printed to the console for mods that use outdated features of Mod Config Menu."]
