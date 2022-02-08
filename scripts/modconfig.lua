@@ -3715,7 +3715,7 @@ for k in pairs(InputHelper.ControllerToString) do
 		{"LEFT BUMPER","左肩键(LB)"},
 		{"RIGHT BUMPER","右肩键(RB)"},
 		{"LEFT TRIGGER","左扳机(LT)"},
-		{"RIGHT BUMPER","右扳机(RT)"},
+		{"RIGHT TRIGGER","右扳机(RT)"},
 		{"RIGHT",  "右"},
 		{"LEFT",  "左"},
 		{"UP",  "上"},
