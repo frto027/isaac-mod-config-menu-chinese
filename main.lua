@@ -8,7 +8,7 @@ ModConfigMenu.StandaloneMod = mod
 ModConfigMenu.PureMode = false
 
 local preload_data = mod:LoadData()
-if preload_data then
+if preload_data and #preload_data > 0 then
 	local json = require("json")
 	preload_data = json.decode(preload_data)["ModConfigSave"]
 	if preload_data and #preload_data > 0 then
