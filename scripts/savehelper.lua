@@ -13,6 +13,8 @@
 -------------
 local fileVersion = 1
 
+local SaveHelper = SaveHelper or (ModConfigMenu and ModConfigMenu.PureMode and ModConfigMenu.PureMode.SaveHelper)
+
 --prevent older/same version versions of this script from loading
 if SaveHelper and SaveHelper.Version >= fileVersion then
 
@@ -25,6 +27,11 @@ if not SaveHelper then
 	SaveHelper = {}
 	SaveHelper.Version = fileVersion
 	
+	if ModConfigMenu.PureMode then
+		ModConfigMenu.PureMode.SaveHelper = SaveHelper
+	else
+		_G.SaveHelper = SaveHelper
+	end
 elseif SaveHelper.Version < fileVersion then
 
 	local oldVersion = SaveHelper.Version
@@ -62,16 +69,18 @@ end
 --require some lua libraries
 local json = require("json")
 
+local CustomCallbackHelper = CustomCallbackHelper
+local _
 --load custom callback helper
 if not CustomCallbackHelper then
 
 	if FilepathHelper then
-		pcall(dofile, "scripts/customcallbacks")
+		_, CustomCallbackHelper = pcall(dofile, "scripts/customcallbacks")
 	else
-		pcall(require, "scripts/customcallbacks")
+		_, CustomCallbackHelper = pcall(require, "scripts/customcallbacks")
 	end
 	
-	if not CustomCallbackHelper then
+	if not _ then
 		error("Save Helper requires Custom Callback Helper to function", 2)
 	end
 	
@@ -82,7 +91,7 @@ end
 -- setup --
 -----------
 SaveHelper.Mod = SaveHelper.Mod or RegisterMod("Save Helper", 1)
-
+CustomCallbackHelper.ExtendMod(SaveHelper.Mod)
 
 ----------
 --TABLES--
@@ -335,7 +344,7 @@ function SaveHelper.GameSave(modRef, saveTable)
 		SaveHelper.FillTable(modRef.SaveHelper_SaveData, saveTable)
 		
 	end
-	
+
 	return modRef.SaveHelper_SaveData
 	
 end
@@ -660,7 +669,7 @@ function SaveHelper.Load(modRef)
 	end
 	
 	SaveHelper.GameSave(modRef, SaveHelper.CopyTable(saveData))
-	
+
 	--SH_POST_MOD_LOAD
 	CustomCallbackHelper.CallCallbacks
 	(

@@ -13,6 +13,8 @@
 -------------
 local fileVersion = 3
 
+local CustomCallbackHelper = CustomCallbackHelper or (ModConfigMenu and ModConfigMenu.PureMode and ModConfigMenu.PureMode.CustomCallbackHelper)
+
 --prevent older/same version versions of this script from loading
 if CustomCallbackHelper and CustomCallbackHelper.Version >= fileVersion then
 
@@ -24,7 +26,11 @@ if not CustomCallbackHelper then
 
 	CustomCallbackHelper = {}
 	CustomCallbackHelper.Version = fileVersion
-	
+	if ModConfigMenu and ModConfigMenu.PureMode then
+		ModConfigMenu.PureMode.CustomCallbackHelper = CustomCallbackHelper
+	else
+		_G.CustomCallbackHelper = CustomCallbackHelper
+	end
 elseif CustomCallbackHelper.Version < fileVersion then
 
 	local oldVersion = CustomCallbackHelper.Version
@@ -356,7 +362,11 @@ function CustomCallbackHelper.RegisterMod(mod, modname, apiversion)
 	end
 	
 end
-Isaac.RegisterMod = CustomCallbackHelper.RegisterMod
+
+if not (ModConfigMenu and ModConfigMenu.PureMode) then
+	Isaac.RegisterMod = CustomCallbackHelper.RegisterMod
+end
+
 
 
 ------------------

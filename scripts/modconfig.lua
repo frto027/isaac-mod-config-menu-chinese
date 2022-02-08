@@ -69,13 +69,17 @@ local vecZero = Vector(0,0)
 --load some lua scripts
 local json = require("json")
 
---load filepath helper
-if not FilepathHelper then
+local _
+local FilepathHelper, CustomCallbackHelper, InputHelper, ScreenHelper, SaveHelper = FilepathHelper, CustomCallbackHelper, InputHelper, ScreenHelper, SaveHelper
 
-	pcall(require, "scripts.filepathhelper")
-	
+--load filepath helper
+if (not (ModConfigMenu and ModConfigMenu.PureMode) --[[ don't load FilepathHelper in PureMode ]]) and not FilepathHelper then
+
+	_, FilepathHelper = pcall(require, "scripts.filepathhelper")
+	FilepathHelper = _ and FilepathHelper
 	if FilepathHelper then
-		pcall(dofile, "scripts/filepathhelper")
+		_, FilepathHelper = pcall(dofile, "scripts/filepathhelper")
+		FilepathHelper = _ and FilepathHelper
 	end
 	
 end
@@ -83,20 +87,22 @@ end
 --load other scripts
 if not CustomCallbackHelper then
 
-	pcall(require, "scripts.customcallbacks")
-	
+	_, CustomCallbackHelper = pcall(require, "scripts.customcallbacks")
+	CustomCallbackHelper = _ and CustomCallbackHelper
 	if FilepathHelper then
-		pcall(dofile, "scripts/customcallbacks")
+		_, CustomCallbackHelper = pcall(dofile, "scripts/customcallbacks")
+		CustomCallbackHelper = _ and CustomCallbackHelper
 	end
 	
 end
 
 if not InputHelper then
 
-	pcall(require, "scripts.inputhelper")
-	
+	_, InputHelper = pcall(require, "scripts.inputhelper")
+	InputHelper = _ and InputHelper
 	if FilepathHelper then
-		pcall(dofile, "scripts/inputhelper")
+		_, InputHelper = pcall(dofile, "scripts/inputhelper")
+		InputHelper = _ and InputHelper
 	end
 	
 	if not InputHelper then
@@ -107,10 +113,11 @@ end
 
 if not ScreenHelper then
 
-	pcall(require, "scripts.screenhelper")
-	
+	_, ScreenHelper = pcall(require, "scripts.screenhelper")
+	ScreenHelper = _ and ScreenHelper
 	if FilepathHelper then
-		pcall(dofile, "scripts/screenhelper")
+		_, ScreenHelper = pcall(dofile, "scripts/screenhelper")
+		ScreenHelper = _ and ScreenHelper
 	end
 	
 	if not ScreenHelper then
@@ -121,10 +128,11 @@ end
 
 if not SaveHelper then
 
-	pcall(require, "scripts.savehelper")
-	
+	_, SaveHelper = pcall(require, "scripts.savehelper")
+	SaveHelper = _ and SaveHelper
 	if FilepathHelper then
-		pcall(dofile, "scripts/savehelper")
+		_, SaveHelper = pcall(dofile, "scripts/savehelper")
+		SaveHelper = _ and SaveHelper
 	end
 	
 	if not SaveHelper then
@@ -151,7 +159,7 @@ local ReloadFont = nil
 
 --create the mod
 ModConfigMenu.Mod = ModConfigMenu.Mod or RegisterMod("Mod Config Menu", 1)
-
+CustomCallbackHelper.ExtendMod(ModConfigMenu.Mod)
 
 -------------------
 --CUSTOM CALLBACK--
@@ -1318,7 +1326,20 @@ ModConfigMenu.AddText("Mod Config Menu", "F10 will always open this menu.")
 
 ModConfigMenu.AddSpace("Mod Config Menu") --SPACE
 
-
+-----------------
+----PURE MODE----
+-----------------
+ModConfigMenu.AddBooleanSetting(
+	"Mod Config Menu", --category
+	"PureMode", --attribute in table
+	false, --default value
+	"纯净模式(" .. (ModConfigMenu.PureMode and "已开启" or "未开启") ..")", --display text
+	{ --value display text
+		[true] = "是",
+		[false] = "否"
+	},
+	"重启生效。提供干净的mod环境,但可能会改变部分mod的行为。"
+)
 ------------
 --HIDE HUD--
 ------------
@@ -1372,7 +1393,6 @@ resetKeybindSetting.IsResetKeybind = true
 -----------------
 --USE GAME FONT--
 -----------------
-local officialFontAvaliable = true
 useGameFont = ModConfigMenu.AddBooleanSetting(
 	"Mod Config Menu", --category
 	"UseGameFont", --attribute in table
@@ -1382,7 +1402,7 @@ useGameFont = ModConfigMenu.AddBooleanSetting(
 		[true] = "Yes",
 		[false] = "No"
 	},
-	"Use the Chinese font that comes with the game instead of the font in MCM.Only takes effect when the language is Chinese."
+	"Use the font that comes with the game instead of the font in MCM.Only takes effect when the language is Chinese."
 )
 local oldUseGameFontOnChange = useGameFont.OnChange
 useGameFont.OnChange = function(currentValue)
@@ -3370,7 +3390,7 @@ if ModConfigMenu.StandaloneMod then
 		ModConfigMenu.StandaloneSaveLoaded = true
 	end
 	
-	if not ModConfigMenu.CompatibilityMode then
+	if (not (ModConfigMenu and ModConfigMenu.PureMode)) and not ModConfigMenu.CompatibilityMode then
 		dofile("scripts/modconfigoldcompatibility")
 	end
 
@@ -3665,12 +3685,12 @@ ModConfigMenu.TranslateOptionsInfoTextWithTable("Mod Config Menu",{
 		= "当前菜单中是否显示HUD",
 	["Press this button on your keyboard to reset a setting to its default value."]
 		= "按下此键以重置一个设置到默认键位",
-	["Use the Chinese font that comes with the game instead of the font in MCM.Only takes effect when the language is Chinese."]
-		= "使用游戏自带的中文字体, 而不是Mod配置菜单自带的字体。仅启用中文时有效。",
+	["Use the font that comes with the game instead of the font in MCM.Only takes effect when the language is Chinese."]
+		= "使用游戏自带的字体, 而不是Mod配置菜单自带的字体。仅启用中文时有效。",
 	["Disable this to remove the back and select widgets at the lower corners of the screen and remove the bottom start-up message."]
 		= "禁用此项可以移除屏幕角落的 “返回”和“选择”控件 与开局的信息提示",
 	["Use this setting to prevent warnings from being printed to the console for mods that use outdated features of Mod Config Menu."]
-		= "对于使用了过时MCM接口的mod， 不再打印警告信息到控制台"
+		= "对于使用了过时MCM接口的mod,不再打印警告信息到控制台"
 })
 
 -- changed in previous program

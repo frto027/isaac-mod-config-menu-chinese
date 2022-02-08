@@ -85,6 +85,8 @@
 -------------
 local fileVersion = 4
 
+local FilepathHelper = FilepathHelper or (ModConfigMenu and ModConfigMenu.PureMode and ModConfigMenu.PureMode.FilepathHelper)
+
 --prevent older/same version versions of this script from loading
 if FilepathHelper and FilepathHelper.Version >= fileVersion then
 
@@ -96,7 +98,11 @@ if not FilepathHelper then
 
 	FilepathHelper = {}
 	FilepathHelper.Version = fileVersion
-	
+	if ModConfigMenu and ModConfigMenu.PureMode then
+		ModConfigMenu.PureMode.FilepathHelper = FilepathHelper
+	else
+		_G.FilepathHelper = FilepathHelper
+	end
 elseif FilepathHelper.Version < fileVersion then
 
 	local oldVersion = FilepathHelper.Version
@@ -308,7 +314,9 @@ function FilepathHelper.DoFile(filename)
 	return returned
 	
 end
-dofile = FilepathHelper.DoFile
+if not (ModConfigMenu and ModConfigMenu.PureMode) then
+	dofile = FilepathHelper.DoFile
+end
 
 
 ----------------------------
@@ -435,7 +443,9 @@ function FilepathHelper.RegisterMod(mod, modname, apiversion)
 	end
 	
 end
-Isaac.RegisterMod = FilepathHelper.RegisterMod
+if not (ModConfigMenu and ModConfigMenu.PureMode) then
+	Isaac.RegisterMod = FilepathHelper.RegisterMod
+end
 
 ------------
 -- return --
