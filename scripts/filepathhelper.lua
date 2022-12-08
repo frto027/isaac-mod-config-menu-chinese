@@ -314,7 +314,7 @@ function FilepathHelper.DoFile(filename)
 	return returned
 	
 end
-if not (ModConfigMenu and ModConfigMenu.PureMode) then
+if dofile and not (ModConfigMenu and ModConfigMenu.PureMode) then
 	dofile = FilepathHelper.DoFile
 end
 

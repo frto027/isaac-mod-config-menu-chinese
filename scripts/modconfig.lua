@@ -100,7 +100,7 @@ if not InputHelper then
 
 	_, InputHelper = pcall(require, "scripts.inputhelper")
 	InputHelper = _ and InputHelper
-	if FilepathHelper then
+	if FilepathHelper and dofile then
 		_, InputHelper = pcall(dofile, "scripts/inputhelper")
 		InputHelper = _ and InputHelper
 	end
@@ -115,7 +115,7 @@ if not ScreenHelper then
 
 	_, ScreenHelper = pcall(require, "scripts.screenhelper")
 	ScreenHelper = _ and ScreenHelper
-	if FilepathHelper then
+	if FilepathHelper and dofile then
 		_, ScreenHelper = pcall(dofile, "scripts/screenhelper")
 		ScreenHelper = _ and ScreenHelper
 	end
@@ -130,7 +130,7 @@ if not SaveHelper then
 
 	_, SaveHelper = pcall(require, "scripts.savehelper")
 	SaveHelper = _ and SaveHelper
-	if FilepathHelper then
+	if FilepathHelper and dofile then
 		_, SaveHelper = pcall(dofile, "scripts/savehelper")
 		SaveHelper = _ and SaveHelper
 	end
@@ -3391,7 +3391,11 @@ if ModConfigMenu.StandaloneMod then
 	end
 	
 	if (not (ModConfigMenu and ModConfigMenu.PureMode)) and not ModConfigMenu.CompatibilityMode then
-		dofile("scripts/modconfigoldcompatibility")
+		if dofile then
+			dofile("scripts/modconfigoldcompatibility")
+		else
+			require("scripts.modconfigoldcompatibility")
+		end
 	end
 
 end

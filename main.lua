@@ -22,14 +22,14 @@ end
 if not ModConfigMenu.PureMode then
 	--load filepath helper
 	require("scripts.filepathhelper")
-	dofile("scripts/filepathhelper")
+	if dofile then dofile("scripts/filepathhelper") end
 
 	--load some scripts
 	require("scripts.customcallbacks")
-	dofile("scripts/customcallbacks")
+	if dofile then dofile("scripts/customcallbacks") end
 
 	require("scripts.savehelper")
-	dofile("scripts/savehelper")
+	if dofile then dofile("scripts/savehelper") end
 
 end
 
@@ -42,6 +42,14 @@ SaveHelper.AddMod(mod)
 SaveHelper.DefaultGameSave(mod, {
 	ModConfigSave = false
 })
+
+--load mod config menu
+
+--we load it like this instead of using dofile because the game caches the require function
+require("scripts.modconfig")
+if not ModConfigMenu.PureMode then
+	if dofile then dofile("scripts/modconfig") else require("scripts.modconfig") end
+end
 
 --get and apply the mcm save when savehelper saves and loads data
 mod:AddCustomCallback(CustomCallbacks.SH_PRE_MOD_SAVE, function(_, modRef, saveData)
@@ -57,13 +65,6 @@ mod:AddCustomCallback(CustomCallbacks.SH_POST_MOD_LOAD, function(_, modRef, save
 	
 end, mod.Name)
 
---load mod config menu
-
---we load it like this instead of using dofile because the game caches the require function
-require("scripts.modconfig")
-if not ModConfigMenu.PureMode then
-	dofile("scripts/modconfig")
-end
 
 if not ModConfigMenu.StandaloneSaveLoaded then
 	SaveHelper.Load(ModConfigMenu.StandaloneMod)
@@ -71,5 +72,5 @@ if not ModConfigMenu.StandaloneSaveLoaded then
 end
 
 if not (ModConfigMenu.PureMode or ModConfigMenu.CompatibilityMode) then
-	dofile("scripts/modconfigoldcompatibility")
+	if dofile then dofile("scripts/modconfigoldcompatibility") else require("scripts.modconfigoldcompatibility") end
 end

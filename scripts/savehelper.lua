@@ -74,7 +74,7 @@ local _
 --load custom callback helper
 if not CustomCallbackHelper then
 
-	if FilepathHelper then
+	if FilepathHelper and dofile then
 		_, CustomCallbackHelper = pcall(dofile, "scripts/customcallbacks")
 	else
 		_, CustomCallbackHelper = pcall(require, "scripts/customcallbacks")
