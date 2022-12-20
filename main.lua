@@ -3,6 +3,12 @@
 --create the mod
 local mod = RegisterMod("Mod Config Menu Standalone", 1)
 
+-- 一部分过时的mod会破坏dofile函数的功能，我们不会去修正这些mod，但至少保证不要被它们干扰
+local dofile = dofile
+if REPENTANCE and not debug then
+	dofile = nil
+end
+
 ModConfigMenu = ModConfigMenu or {}
 ModConfigMenu.StandaloneMod = mod
 ModConfigMenu.PureMode = false

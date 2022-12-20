@@ -1,3 +1,5 @@
+-- Updated by frto027
+
 ---------------------
 -- FILEPATH HELPER --
 ---------------------
@@ -83,7 +85,7 @@
 -------------
 -- version --
 -------------
-local fileVersion = 4
+local fileVersion = 10004
 
 local FilepathHelper = FilepathHelper or (ModConfigMenu and ModConfigMenu.PureMode and ModConfigMenu.PureMode.FilepathHelper)
 
@@ -442,6 +444,7 @@ function FilepathHelper.RegisterMod(mod, modname, apiversion)
 	
 	end
 	
+	return returned
 end
 if not (ModConfigMenu and ModConfigMenu.PureMode) then
 	Isaac.RegisterMod = FilepathHelper.RegisterMod

@@ -11,7 +11,7 @@
 -------------
 -- version --
 -------------
-local fileVersion = 3
+local fileVersion = 10003
 
 local CustomCallbackHelper = CustomCallbackHelper or (ModConfigMenu and ModConfigMenu.PureMode and ModConfigMenu.PureMode.CustomCallbackHelper)
 
@@ -361,6 +361,7 @@ function CustomCallbackHelper.RegisterMod(mod, modname, apiversion)
 
 	end
 	
+	return returned
 end
 
 if not (ModConfigMenu and ModConfigMenu.PureMode) then

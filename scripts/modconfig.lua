@@ -1,13 +1,19 @@
 -------------
 -- version --
 -------------
-local fileVersion = 32
+local fileVersion = 10032
 
 --prevent older/same version versions of this script from loading
 if ModConfigMenu and ModConfigMenu.Version and ModConfigMenu.Version >= fileVersion then
 
 	return ModConfigMenu
 
+end
+
+-- 一部分过时的mod会破坏dofile函数的功能，我们不会去修正这些mod，但至少保证不要被它们干扰
+local dofile = dofile
+if REPENTANCE and not debug then
+	dofile = nil
 end
 
 if not ModConfigMenu then
@@ -62,7 +68,7 @@ ModConfigMenu.Version = fileVersion
 -----------
 -- setup --
 -----------
-Isaac.DebugString("Loading Mod Config Menu v" .. ModConfigMenu.Version)
+Isaac.DebugString("Loading Mod Config Menu Chinese v" .. ModConfigMenu.Version)
 
 local vecZero = Vector(0,0)
 
@@ -3404,8 +3410,8 @@ end
 ------------
 --FINISHED--
 ------------
-Isaac.DebugString("Mod Config Menu v" .. ModConfigMenu.Version .. " loaded!")
-print("Mod Config Menu v" .. ModConfigMenu.Version .. " loaded!")
+Isaac.DebugString("Mod Config Menu Chinese v" .. ModConfigMenu.Version .. " loaded!")
+print("Mod Config Menu Chinese v" .. ModConfigMenu.Version .. " loaded!")
 
 -- code added by @frto027(steamid/github/bilibili)
 
