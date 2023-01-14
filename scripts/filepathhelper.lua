@@ -85,7 +85,7 @@
 -------------
 -- version --
 -------------
-local fileVersion = 10004
+local fileVersion = 10005
 
 local FilepathHelper = FilepathHelper or (ModConfigMenu and ModConfigMenu.PureMode and ModConfigMenu.PureMode.FilepathHelper)
 
@@ -316,10 +316,6 @@ function FilepathHelper.DoFile(filename)
 	return returned
 	
 end
-if dofile and not (ModConfigMenu and ModConfigMenu.PureMode) then
-	dofile = FilepathHelper.DoFile
-end
-
 
 ----------------------------
 -- isfile and isdirectory --

@@ -30,6 +30,8 @@ end
 
 # 纯净模式
 
-原版Mod配置菜单新增了全局变量SaveHelper、CustomCallbackHelper、FilepathHelper、ScreenHelper、ModConfigMenu、InputHelper。重写了游戏的`Isaac.RegisterMod`函数和`dofile`库函数，并改变了原始`dofile`函数的行为（使其能跨mod调用文件）。
+原版Mod配置菜单新增了全局变量SaveHelper、CustomCallbackHelper、FilepathHelper、ScreenHelper、ModConfigMenu、InputHelper。重写了游戏的`Isaac.RegisterMod`函数~~和`dofile`库函数~~，~~并改变了原始`dofile`函数的行为（使其能跨mod调用文件）~~。
+
+游戏官方删除了dofile接口，因此mod的dofile变更失效，此功能已被移除。
 
 在`纯净模式`下，这些行为均被移除，仅保留ModConfigMenu、ScreenHelper、InputHelper全局变量，不再改变游戏api和lua库函数的行为。

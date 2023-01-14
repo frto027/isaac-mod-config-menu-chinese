@@ -11,15 +11,9 @@
 -------------
 -- version --
 -------------
-local fileVersion = 10001
+local fileVersion = 10002
 
 local SaveHelper = SaveHelper or (ModConfigMenu and ModConfigMenu.PureMode and ModConfigMenu.PureMode.SaveHelper)
-
--- 一部分过时的mod会破坏dofile函数的功能，我们不会去修正这些mod，但至少保证不要被它们干扰
-local dofile = dofile
-if REPENTANCE and not debug then
-	dofile = nil
-end
 
 --prevent older/same version versions of this script from loading
 if SaveHelper and SaveHelper.Version >= fileVersion then
@@ -80,12 +74,8 @@ local _
 --load custom callback helper
 if not CustomCallbackHelper then
 
-	if FilepathHelper and dofile then
-		_, CustomCallbackHelper = pcall(dofile, "scripts/customcallbacks")
-	else
-		_, CustomCallbackHelper = pcall(require, "scripts/customcallbacks")
-	end
-	
+	_, CustomCallbackHelper = pcall(require, "scripts/customcallbacks")
+
 	if not _ then
 		error("Save Helper requires Custom Callback Helper to function", 2)
 	end

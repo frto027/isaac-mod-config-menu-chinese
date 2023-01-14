@@ -1,19 +1,13 @@
 -------------
 -- version --
 -------------
-local fileVersion = 10032
+local fileVersion = 10033
 
 --prevent older/same version versions of this script from loading
 if ModConfigMenu and ModConfigMenu.Version and ModConfigMenu.Version >= fileVersion then
 
 	return ModConfigMenu
 
-end
-
--- 一部分过时的mod会破坏dofile函数的功能，我们不会去修正这些mod，但至少保证不要被它们干扰
-local dofile = dofile
-if REPENTANCE and not debug then
-	dofile = nil
 end
 
 if not ModConfigMenu then
@@ -83,10 +77,6 @@ if (not (ModConfigMenu and ModConfigMenu.PureMode) --[[ don't load FilepathHelpe
 
 	_, FilepathHelper = pcall(require, "scripts.filepathhelper")
 	FilepathHelper = _ and FilepathHelper
-	if FilepathHelper then
-		_, FilepathHelper = pcall(dofile, "scripts/filepathhelper")
-		FilepathHelper = _ and FilepathHelper
-	end
 	
 end
 
@@ -95,10 +85,6 @@ if not CustomCallbackHelper then
 
 	_, CustomCallbackHelper = pcall(require, "scripts.customcallbacks")
 	CustomCallbackHelper = _ and CustomCallbackHelper
-	if FilepathHelper then
-		_, CustomCallbackHelper = pcall(dofile, "scripts/customcallbacks")
-		CustomCallbackHelper = _ and CustomCallbackHelper
-	end
 	
 end
 
@@ -106,10 +92,6 @@ if not InputHelper then
 
 	_, InputHelper = pcall(require, "scripts.inputhelper")
 	InputHelper = _ and InputHelper
-	if FilepathHelper and dofile then
-		_, InputHelper = pcall(dofile, "scripts/inputhelper")
-		InputHelper = _ and InputHelper
-	end
 	
 	if not InputHelper then
 		error("Mod Config Menu requires Input Helper to function", 2)
@@ -121,10 +103,6 @@ if not ScreenHelper then
 
 	_, ScreenHelper = pcall(require, "scripts.screenhelper")
 	ScreenHelper = _ and ScreenHelper
-	if FilepathHelper and dofile then
-		_, ScreenHelper = pcall(dofile, "scripts/screenhelper")
-		ScreenHelper = _ and ScreenHelper
-	end
 	
 	if not ScreenHelper then
 		error("Mod Config Menu requires Screen Helper to function", 2)
@@ -136,10 +114,6 @@ if not SaveHelper then
 
 	_, SaveHelper = pcall(require, "scripts.savehelper")
 	SaveHelper = _ and SaveHelper
-	if FilepathHelper and dofile then
-		_, SaveHelper = pcall(dofile, "scripts/savehelper")
-		SaveHelper = _ and SaveHelper
-	end
 	
 	if not SaveHelper then
 		error("Mod Config Menu requires Save Helper to function", 2)
@@ -3397,11 +3371,7 @@ if ModConfigMenu.StandaloneMod then
 	end
 	
 	if (not (ModConfigMenu and ModConfigMenu.PureMode)) and not ModConfigMenu.CompatibilityMode then
-		if dofile then
-			dofile("scripts/modconfigoldcompatibility")
-		else
-			require("scripts.modconfigoldcompatibility")
-		end
+		require("scripts.modconfigoldcompatibility")
 	end
 
 end
