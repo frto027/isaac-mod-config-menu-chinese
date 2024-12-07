@@ -1,7 +1,145 @@
 -------------
 -- version --
 -------------
-local fileVersion = 10033
+local fileVersion = 10034
+
+local fontConfigs = {
+	-- {
+	--  Name = "MCM",
+	--  DisplayName = "MCM",
+	-- 	VersionPrintFont = Font(),
+	-- 	Font10 = Font(),
+	-- 	Font12 = Font(),
+	-- 	Font16Bold = Font(),
+	--  SkinArg = {}
+	-- },
+}
+
+local SpritesheetIndex = {
+	["menu.png"] =0,
+	["popup_thin_small.png"] =1,
+	["backselect.png"] =2,
+	["black.png"] =3,
+	["arrows.png"] =4,
+	["slider.png"] =5,
+	["offset.png"] =6,
+	["strike.png"] =7,
+	["menu_overlay.png"] =8,
+}
+
+local skinConfigs = {
+	{
+		Name = "MCM",
+		DisplayName = "MCM",
+		UseFontName = nil, -- string, a Name of fontConfig, or nil if not change font
+		Spritesheets = {
+			["menu.png"] 				= "gfx/ui/modconfig/menu.png",
+			["popup_thin_small.png"] 	= "gfx/ui/modconfig/popup_thin_small.png",
+			["backselect.png"] 			= "gfx/ui/modconfig/backselect.png",
+			["black.png"] 				= "gfx/ui/modconfig/black.png",
+			["arrows.png"]				= "gfx/ui/modconfig/arrows.png",
+			["slider.png"]				= "gfx/ui/modconfig/slider.png",
+			["offset.png"]				= "gfx/ui/modconfig/offset.png",
+			["strike.png"]				= "gfx/ui/modconfig/strike.png",
+			["menu_overlay.png"] 		= "gfx/ui/modconfig/menu_overlay.png",
+		},
+		PopupGfx = {
+			THIN_SMALL = "gfx/ui/modconfig/popup_thin_small.png",
+			THIN_MEDIUM = "gfx/ui/modconfig/popup_thin_medium.png",
+			THIN_LARGE = "gfx/ui/modconfig/popup_thin_large.png",
+			WIDE_SMALL = "gfx/ui/modconfig/popup_wide_small.png",
+			WIDE_MEDIUM = "gfx/ui/modconfig/popup_wide_medium.png",
+			WIDE_LARGE = "gfx/ui/modconfig/popup_wide_large.png"
+		},
+		-- SkinArg = {
+		-- 	TitlePos = Vector(68,-118) -- see DefaultSkinArg below
+		--  LeftPos = Vector(-150, -100)
+		-- }
+	},
+	-- {
+	-- 	Name = "Minecraft",
+	--  UseFontName = "MCM",
+	-- 	Spritesheets = {
+	-- 		["menu.png"] 				= "somesprite.png",
+	-- 		["popup_thin_small.png"] 	= "",
+	-- 		["backselect.png"] 			= "",
+	-- 		["black.png"] 				= "",
+	-- 		["arrows.png"]				= "",
+	-- 		["slider.png"]				= "",
+	-- 		["offset.png"]				= "",
+	-- 		["strike.png"]				= "",
+	-- 		["menu_overlay.png"] 		= "",
+	-- 	},
+	--  SkinArg = {
+	--  TitlePos = Vector(68,-118)
+	--  }
+	-- }
+}
+local SkinArg = {}
+
+local DefaultSkinArg = {
+	-- screen positions
+	TitlePos = Vector(68,-118),
+	LeftPos = Vector(-142,-102),
+	LeftPosTopmostOffset = -116,
+	LeftPosBottommostOffset = 90,
+	OptionLineHeight = 14,
+
+	OptionPos = Vector(68,-18),
+	OptionPosTopmostOffset = -108,
+	OptionPosBottommostOffset = 86,
+
+	OptionCursorSpriteUpOffset = Vector(193,-86),
+	OptionCursorSpriteDownOffsetX = 193,
+	OptionCursorSpriteDownOffsetY = 66,
+	OptionCursorSpriteDownOffsetYShowControls = 40,
+
+	InfoPos = Vector(-4,106),
+	CursorSpriteUpPos = Vector(-78,-104),
+	CursorSpriteDownPos = Vector(-78,70),
+
+	CategoryHeight = 16,
+
+	SubCategoryHeight = 7,
+
+	SubCategory2Offset = Vector(-38,0),
+	SubCategory3Offset = Vector(-76,0),
+	SubCategoryWidth = 76,
+	SubCategoryCursorSpriteLeftOffset = Vector(-125,0),
+	SubCategoryCursorSpriteRightOffset = Vector(125,0),
+
+	
+	TitleYOffset = -9,
+
+	InfoLineWidth = 340,
+	InfoLineWidthShowControls = 260,
+
+	DefaultPopupWidth = 180,
+	
+	ControlsGoBackOffsetX = 36,
+	ControlsGoBackOffsetY = -24,
+	ControlsSelectOffsetX = -36,
+	ControlsSelectOffsetY = -24,
+
+	OptionHeightOffset = 6,
+	OptionTitleHeightOffset = 8,
+
+	-- sound effect
+	DefaultSoundEffect = SoundEffect.SOUND_PLOP,
+	OpenConfigMenuFailedSoundEffectPlay = function() SFXManager():Play(SoundEffect.SOUND_BOSS2INTRO_ERRORBUZZ, 0.75, 0, false, 1) end,
+	SelectErrorBuzzSoundEffectPlay = function() SFXManager():Play(SoundEffect.SOUND_BOSS2INTRO_ERRORBUZZ, 0.75, 0, false, 1) end,
+
+	-- the disabled/actived color
+	ColorDefault = Color(1,1,1,1,0,0,0),
+	ColorHalf = Color(1,1,1,0.5,0,0,0),
+}
+
+local function ResetSkinArg()
+	for k,v in pairs(DefaultSkinArg) do
+		SkinArg[k] = v
+	end
+end
+ResetSkinArg()
 
 --prevent older/same version versions of this script from loading
 if ModConfigMenu and ModConfigMenu.Version and ModConfigMenu.Version >= fileVersion then
@@ -136,7 +274,7 @@ local function GetCurrentModPath()
 	return modPath
 end
 local ReloadFont = nil
-
+local ReloadSkin = nil
 --create the mod
 ModConfigMenu.Mod = ModConfigMenu.Mod or RegisterMod("Mod Config Menu", 1)
 CustomCallbackHelper.ExtendMod(ModConfigMenu.Mod)
@@ -202,8 +340,9 @@ function ModConfigMenu.LoadSave(fromData)
 			ScreenHelper.SetOffset(ModConfigMenu.Config["General"].HudOffset)
 		end
 		
-		--make Font match
-		ReloadFont(ModConfigMenu.Config["Mod Config Menu"].UseGameFont)
+		--make Font and Skin match
+		ReloadSkin(false)
+		ReloadFont()
 
 		return saveData
 		
@@ -253,8 +392,8 @@ function ModConfigMenu.PostGameStarted()
 
 	rerunWarnMessage = nil
 
-	if ModConfigMenu.Config["Mod Config Menu"].ShowControls then
-	
+	if ModConfigMenu.Config["Mod Config Menu"].ShowKeyPressHint then
+
 		versionPrintTimer = 120
 		
 	end
@@ -299,9 +438,12 @@ ModConfigMenu.Mod:AddCallback(ModCallbacks.MC_POST_UPDATE, ModConfigMenu.PostUpd
 ------------------------------------
 --set up the menu sprites and font--
 ------------------------------------
+local AllCreatedSprites = {}
+
 function ModConfigMenu.GetMenuAnm2Sprite(animation, frame, color)
 
 	local sprite = Sprite()
+	table.insert(AllCreatedSprites, sprite)
 	
 	sprite:Load("gfx/ui/modconfig/menu.anm2", true)
 	sprite:SetFrame(animation or "Idle", frame or 0)
@@ -320,7 +462,7 @@ local MenuOverlaySprite = ModConfigMenu.GetMenuAnm2Sprite("IdleOverlay", 0)
 local PopupSprite = ModConfigMenu.GetMenuAnm2Sprite("Popup", 0)
 
 --main cursors
-local CursorSpriteRight = ModConfigMenu.GetMenuAnm2Sprite("Cursor", 0)
+local CursorSpriteRight = ModConfigMenu.GetMenuAnm2Sprite("Cursor", 4)
 local CursorSpriteUp = ModConfigMenu.GetMenuAnm2Sprite("Cursor", 1)
 local CursorSpriteDown = ModConfigMenu.GetMenuAnm2Sprite("Cursor", 2)
 
@@ -356,28 +498,76 @@ local Font12
 
 local Font16Bold
 
-local versionPrintFont_mcm, Font10_mcm, Font12_mcm, Font16Bold_mcm = Font(), Font(), Font(), Font()
-local versionPrintFont_official, Font10_official, Font12_official, Font16Bold_official = Font(), Font(), Font(), Font()
--- load fonts
-versionPrintFont_mcm:Load(GetCurrentModPath() .. "resources/mcm_cn_font/pftempestasevencondensed.fnt")
-Font10_mcm:Load(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont10.fnt")
-Font12_mcm:Load(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont12.fnt")
-Font16Bold_mcm:Load(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont16bold.fnt")
-versionPrintFont_official:Load("font/upheavalextended.fnt")
-Font10_official:Load("font/teammeatfontextended10.fnt")
-Font12_official:Load("font/teammeatfontextended12.fnt")
-Font16Bold_official:Load("font/teammeatfontextended16bold.fnt")
-
-
-ReloadFont = function (isGameOfficialFont)
-	if isGameOfficialFont and Options and Options.Language == "zh" then
-		versionPrintFont, Font10, Font12, Font16Bold = versionPrintFont_official, Font10_official, Font12_official, Font16Bold_official
-	else
-		versionPrintFont, Font10, Font12, Font16Bold = versionPrintFont_mcm, Font10_mcm, Font12_mcm, Font16Bold_mcm
+ReloadFont = function ()
+	local selectedFont = fontConfigs[1]
+	for _, font in ipairs(fontConfigs) do
+		if font.Name == ModConfigMenu.Config["Mod Config Menu"].SelectedFontName then
+			selectedFont = font
+		end
 	end
+	versionPrintFont, Font10, Font12, Font16Bold = 
+		selectedFont.VersionPrintFont, selectedFont.Font10, selectedFont.Font12, selectedFont.Font16Bold
 end
 
+ReloadSkin = function (updateFont)
+	local selectedSkin = skinConfigs[1]
+	for _, skin in ipairs(skinConfigs) do
+		if skin.Name == ModConfigMenu.Config["Mod Config Menu"].SelectedSkinName then
+			selectedSkin = skin
+		end
+	end
 
+	if updateFont and selectedSkin.UseFontName ~= nil then
+		for _, font in ipairs(fontConfigs) do
+			if font.Name == selectedSkin.UseFontName then
+				ModConfigMenu.Config["Mod Config Menu"].SelectedFontName = selectedSkin.UseFontName
+				ReloadFont()
+			end
+		end
+	end
+
+	local templateSkinConfig = skinConfigs[1]
+	local selectedSpritesheets = selectedSkin.Spritesheets or templateSkinConfig.Spritesheets
+	for k,v in pairs(templateSkinConfig.Spritesheets) do
+		local idx = SpritesheetIndex[k]
+		if idx ~= nil then
+			for _, sprite in ipairs(AllCreatedSprites) do
+				sprite:ReplaceSpritesheet(idx, selectedSpritesheets[k] or v)
+			end
+		end
+	end
+
+	local replacedPopupGfx = selectedSkin.PopupGfx or skinConfigs[1].PopupGfx
+	ModConfigMenu.PopupGfx.THIN_SMALL = replacedPopupGfx.THIN_SMALL or skinConfigs[1].PopupGfx.THIN_SMALL
+	ModConfigMenu.PopupGfx.THIN_MEDIUM = replacedPopupGfx.THIN_MEDIUM or skinConfigs[1].PopupGfx.THIN_MEDIUM
+	ModConfigMenu.PopupGfx.THIN_LARGE = replacedPopupGfx.THIN_LARGE or skinConfigs[1].PopupGfx.THIN_LARGE
+	ModConfigMenu.PopupGfx.WIDE_SMALL = replacedPopupGfx.WIDE_SMALL or skinConfigs[1].PopupGfx.WIDE_SMALL
+	ModConfigMenu.PopupGfx.WIDE_MEDIUM = replacedPopupGfx.WIDE_MEDIUM or skinConfigs[1].PopupGfx.WIDE_MEDIUM
+	ModConfigMenu.PopupGfx.WIDE_LARGE = replacedPopupGfx.WIDE_LARGE or skinConfigs[1].PopupGfx.WIDE_LARGE
+
+	ResetSkinArg()
+	-- skin pos for font
+		local selectedFont = fontConfigs[1]
+		for _, font in ipairs(fontConfigs) do
+			if font.Name == ModConfigMenu.Config["Mod Config Menu"].SelectedFontName then
+				selectedFont = font
+			end
+		end
+		if selectedFont.SkinArg ~= nil then
+			for k,v in pairs(selectedFont.SkinArg) do
+				SkinArg[k] = v
+			end
+		end
+	-- skin pos for skin
+		if selectedSkin.SkinArg ~= nil then
+			for k,v in pairs(selectedSkin.SkinArg) do
+				SkinArg[k] = v
+			end
+		end
+	
+	colorDefault = SkinArg.ColorDefault
+	colorHalf = SkinArg.ColorHalf
+end
 --popups
 ModConfigMenu.PopupGfx = ModConfigMenu.PopupGfx or {}
 ModConfigMenu.PopupGfx.THIN_SMALL = "gfx/ui/modconfig/popup_thin_small.png"
@@ -1136,7 +1326,7 @@ local useGameSetting = ModConfigMenu.AddBooleanSetting(
 )
 
 function ModConfigMenu.SyncGameSettings()
-	if REPENTANCE and ModConfigMenu.Config["General"].UseGameSetting then
+	if (REPENTANCE or REPENTANCE_PLUS) and ModConfigMenu.Config["General"].UseGameSetting then
 		local HUDOffset = math.floor(Options.HUDOffset * 10 + 0.5)
 		if HUDOffset ~= ModConfigMenu.Config["General"].HudOffset then
 			ModConfigMenu.Config["General"].HudOffset = HUDOffset
@@ -1371,26 +1561,77 @@ local resetKeybindSetting = ModConfigMenu.AddKeyboardSetting(
 resetKeybindSetting.IsResetKeybind = true
 
 -----------------
---USE GAME FONT--
+--  Font Name  --
 -----------------
-useGameFont = ModConfigMenu.AddBooleanSetting(
+local fontNameSetthing = nil
+fontNameSetthing = ModConfigMenu.AddSetting(
 	"Mod Config Menu", --category
-	"UseGameFont", --attribute in table
-	false, --default value
-	"Use Game Font", --display text
-	{ --value display text
-		[true] = "Yes",
-		[false] = "No"
-	},
-	"Use the font that comes with the game instead of the font in MCM.Only takes effect when the language is Chinese."
+	{
+		Type = ModConfigMenu.OptionType.NUMBER,
+		CurrentSetting = function()
+			for i, font in ipairs(fontConfigs) do
+				if font.Name == ModConfigMenu.Config["Mod Config Menu"].SelectedFontName then
+					return i
+				end
+			end
+			return 1
+		end,
+		Minimum = 1,
+		Maximum = #(fontConfigs), -- add "auto" language
+		Display = function()
+			for i, font in ipairs(fontConfigs) do
+				if font.Name == ModConfigMenu.Config["Mod Config Menu"].SelectedFontName then
+					return "字体:" .. (font.DisplayName or font.Name)
+				end
+			end
+			return  "字体:" .. (fontConfigs[1].DisplayName or fontConfigs[1].Name)
+		end,
+		OnChange = function(currentNum)
+			fontNameSetthing.Maximum = #(fontConfigs)
+			local currentFont = fontConfigs[currentNum] or fontConfigs[1]
+			ModConfigMenu.Config["Mod Config Menu"].SelectedFontName = currentFont.Name
+			ReloadFont()
+			ReloadSkin(false)
+		end,
+		Info = {"设定Mod配置菜单使用的字体。"}
+	}
 )
-local oldUseGameFontOnChange = useGameFont.OnChange
-useGameFont.OnChange = function(currentValue)
-	oldUseGameFontOnChange(currentValue)
-	ReloadFont(currentValue)
-end
 
-ReloadFont(false)
+local skinNameSetthing = nil
+skinNameSetthing = ModConfigMenu.AddSetting(
+	"Mod Config Menu", --category
+	{
+		Type = ModConfigMenu.OptionType.NUMBER,
+		CurrentSetting = function()
+			for i, skin in ipairs(skinConfigs) do
+				if skin.Name == ModConfigMenu.Config["Mod Config Menu"].SelectedSkinName then
+					return i
+				end
+			end
+			return 1
+		end,
+		Minimum = 1,
+		Maximum = #(skinConfigs), -- add "auto" language
+		Display = function()
+			for i, skin in ipairs(skinConfigs) do
+				if skin.Name == ModConfigMenu.Config["Mod Config Menu"].SelectedSkinName then
+					return  "皮肤:" .. (skin.DisplayName or skin.Name)
+				end
+			end
+
+			return  "皮肤:" .. (skinConfigs[1].DisplayName or skinConfigs[1].Name)
+		end,
+		OnChange = function(currentNum)
+			skinNameSetthing.Maximum = #(skinConfigs)
+			local currentSkin = skinConfigs[currentNum] or skinConfigs[1]
+			ModConfigMenu.Config["Mod Config Menu"].SelectedSkinName = currentSkin.Name
+			ReloadSkin(true)
+		end,
+		Info = {"设定Mod配置菜单使用的皮肤。"}
+	}
+)
+
+-- ReloadFont(false)
 
 -----------------
 --SHOW CONTROLS--
@@ -1404,8 +1645,24 @@ ModConfigMenu.AddBooleanSetting(
 		[true] = "Yes",
 		[false] = "No"
 	},
-	"Disable this to remove the back and select widgets at the lower corners of the screen and remove the bottom start-up message."
+	"Disable this to remove the back and select widgets."
 )
+
+-----------------
+--SHOW Press L---
+-----------------
+ModConfigMenu.AddBooleanSetting(
+	"Mod Config Menu", --category
+	"ShowKeyPressHint", --attribute in table
+	true, --default value
+	"Show Key Hint", --display text
+	{ --value display text
+		[true] = "Yes",
+		[false] = "No"
+	},
+	"Display Press x to open MCM when start game."
+)
+
 
 ModConfigMenu.AddSpace("Mod Config Menu") --SPACE
 
@@ -1846,7 +2103,7 @@ function ModConfigMenu.PostRender()
 		
 			ModConfigMenu.CloseConfigMenu()
 			
-			sfx:Play(SoundEffect.SOUND_BOSS2INTRO_ERRORBUZZ, 0.75, 0, false, 1)
+			SkinArg.OpenConfigMenuFailedSoundEffectPlay()
 			
 		end
 		
@@ -2025,7 +2282,7 @@ function ModConfigMenu.PostRender()
 						or (currentMenuOption.OnSelect and (pressingButton == "SELECT" or pressingButton == "RIGHT"))
 						or (currentMenuOption.IsResetKeybind and pressingButton == "RESET")
 						or (currentMenuOption.IsOpenMenuKeybind and pressedToggleMenu)) then
-							sfx:Play(SoundEffect.SOUND_BOSS2INTRO_ERRORBUZZ, 0.75, 0, false, 1)
+							SkinArg.SelectErrorBuzzSoundEffectPlay()
 						else
 							local numberToChange = nil
 							local recievedInput = false
@@ -2098,7 +2355,7 @@ function ModConfigMenu.PostRender()
 								
 								local sound = currentMenuOption.Sound
 								if not sound then
-									sound = SoundEffect.SOUND_PLOP
+									sound = SkinArg.DefaultSoundEffect
 								end
 								if sound >= 0 then
 									sfx:Play(sound, 1, 0, false, 1)
@@ -2225,7 +2482,7 @@ function ModConfigMenu.PostRender()
 						
 						local sound = currentMenuOption.Sound
 						if not sound then
-							sound = SoundEffect.SOUND_PLOP
+							sound = SkinArg.DefaultSoundEffect
 						end
 						if sound >= 0 then
 							sfx:Play(sound, 1, 0, false, 1)
@@ -2269,7 +2526,7 @@ function ModConfigMenu.PostRender()
 						
 						local sound = currentMenuOption.Sound
 						if not sound then
-							sound = SoundEffect.SOUND_PLOP
+							sound = SkinArg.DefaultSoundEffect
 						end
 						if sound >= 0 then
 							sfx:Play(sound, 1, 0, false, 1)
@@ -2307,7 +2564,7 @@ function ModConfigMenu.PostRender()
 						
 						local sound = currentMenuOption.Sound
 						if not sound then
-							sound = SoundEffect.SOUND_PLOP
+							sound = SkinArg.DefaultSoundEffect
 						end
 						if sound >= 0 then
 							sfx:Play(sound, 1, 0, false, 1)
@@ -2549,7 +2806,7 @@ function ModConfigMenu.PostRender()
 		local centerPos = ScreenHelper.GetScreenCenter()
 		
 		--title pos handling
-		local titlePos = centerPos + Vector(68,-118)
+		local titlePos = centerPos + SkinArg.TitlePos
 		
 		--left pos handling
 		
@@ -2559,9 +2816,9 @@ function ModConfigMenu.PostRender()
 		
 		local numLeft = #ModConfigMenu.MenuData
 		
-		local leftPos = centerPos + Vector(-142,-102)
-		local leftPosTopmost = centerPos.Y - 116
-		local leftPosBottommost = centerPos.Y + 90
+		local leftPos = centerPos + SkinArg.LeftPos
+		local leftPosTopmost = centerPos.Y + SkinArg.LeftPosTopmostOffset
+		local leftPosBottommost = centerPos.Y + SkinArg.LeftPosBottommostOffset
 		
 		if numLeft > 7 then
 		
@@ -2571,7 +2828,7 @@ function ModConfigMenu.PostRender()
 				
 				local cursorScroll = configMenuPositionCursorCategory - 6
 				local maxLeftScroll = numLeft - 8
-				leftDesiredOffset = math.min(cursorScroll, maxLeftScroll) * -14
+				leftDesiredOffset = math.min(cursorScroll, maxLeftScroll) * -SkinArg.OptionLineHeight
 				
 				if cursorScroll < maxLeftScroll then
 					leftCanScrollDown = true
@@ -2613,9 +2870,9 @@ function ModConfigMenu.PostRender()
 		
 		local numOptions = 0
 		
-		local optionPos = centerPos + Vector(68,-18)
-		local optionPosTopmost = centerPos.Y - 108
-		local optionPosBottommost = centerPos.Y + 86
+		local optionPos = centerPos + SkinArg.OptionPos
+		local optionPosTopmost = centerPos.Y + SkinArg.OptionPosTopmostOffset
+		local optionPosBottommost = centerPos.Y + SkinArg.OptionPosBottommostOffset
 		
 		if currentMenuSubcategory
 		and currentMenuSubcategory.Options
@@ -2635,9 +2892,9 @@ function ModConfigMenu.PostRender()
 			end
 			
 			if hasSubcategories then
-				optionPos = optionPos + Vector(0, -70)
+				optionPos = optionPos + Vector(0, 10 * SkinArg.SubCategoryHeight * -1)
 			else
-				optionPos = optionPos + Vector(0, math.min(numOptions-1, 10) * -7)
+				optionPos = optionPos + Vector(0, math.min(numOptions-1, 10) * SkinArg.SubCategoryHeight * -1)
 			end
 			
 			if numOptions > 12 then
@@ -2648,7 +2905,7 @@ function ModConfigMenu.PostRender()
 					
 					local cursorScroll = configMenuPositionCursorOption - 6
 					local maxOptionsScroll = numOptions - 12
-					optionsDesiredOffset = math.min(cursorScroll, maxOptionsScroll) * -14
+					optionsDesiredOffset = math.min(cursorScroll, maxOptionsScroll) * -SkinArg.OptionLineHeight
 					
 					if cursorScroll < maxOptionsScroll then
 						optionsCanScrollDown = true
@@ -2686,7 +2943,7 @@ function ModConfigMenu.PostRender()
 		end
 		
 		--info pos handling
-		local infoPos = centerPos + Vector(-4,106)
+		local infoPos = centerPos + SkinArg.InfoPos
 	
 		MenuSprite:Render(centerPos, vecZero, vecZero)
 		
@@ -2730,16 +2987,16 @@ function ModConfigMenu.PostRender()
 			renderedLeft = renderedLeft + 1
 			
 			--pos mod
-			lastLeftPos = lastLeftPos + Vector(0,16)
+			lastLeftPos = lastLeftPos + Vector(0,SkinArg.CategoryHeight)
 			
 		end
 		
 		--render scroll arrows
 		if leftCanScrollUp then
-			CursorSpriteUp:Render(centerPos + Vector(-78,-104), vecZero, vecZero) --up arrow
+			CursorSpriteUp:Render(centerPos + SkinArg.CursorSpriteUpPos, vecZero, vecZero) --up arrow
 		end
 		if leftCanScrollDown then
-			CursorSpriteDown:Render(centerPos + Vector(-78,70), vecZero, vecZero) --down arrow
+			CursorSpriteDown:Render(centerPos + SkinArg.CursorSpriteDownPos, vecZero, vecZero) --down arrow
 		end
 		
 		------------------------
@@ -2773,9 +3030,9 @@ function ModConfigMenu.PostRender()
 				
 					local lastSubcategoryPos = optionPos
 					if numCategories == 2 then
-						lastSubcategoryPos = lastOptionPos + Vector(-38,0)
+						lastSubcategoryPos = lastOptionPos + SkinArg.SubCategory2Offset
 					elseif numCategories >= 3 then
-						lastSubcategoryPos = lastOptionPos + Vector(-76,0)
+						lastSubcategoryPos = lastOptionPos + SkinArg.SubCategory3Offset
 					end
 				
 					local renderedSubcategories = 0
@@ -2818,11 +3075,11 @@ function ModConfigMenu.PostRender()
 							
 								--render scroll arrows
 								if configMenuPositionFirstSubcategory > 1 then --if the first one we rendered wasnt the first in the list
-									SubcategoryCursorSpriteLeft:Render(lastOptionPos + Vector(-125,0), vecZero, vecZero)
+									SubcategoryCursorSpriteLeft:Render(lastOptionPos + SkinArg.SubCategoryCursorSpriteLeftOffset, vecZero, vecZero)
 								end
 								
 								if subcategoryIndex < #currentMenuCategory.Subcategories then --if this isnt the last thing
-									SubcategoryCursorSpriteRight:Render(lastOptionPos + Vector(125,0), vecZero, vecZero)
+									SubcategoryCursorSpriteRight:Render(lastOptionPos + SkinArg.SubCategoryCursorSpriteRightOffset, vecZero, vecZero)
 								end
 								
 								break
@@ -2830,7 +3087,7 @@ function ModConfigMenu.PostRender()
 							end
 						
 							--pos mod
-							lastSubcategoryPos = lastSubcategoryPos + Vector(76,0)
+							lastSubcategoryPos = lastSubcategoryPos + Vector(SkinArg.SubCategoryWidth,0)
 						
 						end
 						
@@ -2840,7 +3097,7 @@ function ModConfigMenu.PostRender()
 				
 				--subcategory selection counts as an option that gets rendered
 				renderedOptions = renderedOptions + 1
-				lastOptionPos = lastOptionPos + Vector(0,14)
+				lastOptionPos = lastOptionPos + Vector(0,SkinArg.OptionLineHeight)
 				
 				--subcategory to options divider
 				if lastOptionPos.Y > optionPosTopmost and lastOptionPos.Y < optionPosBottommost then
@@ -2851,7 +3108,7 @@ function ModConfigMenu.PostRender()
 				
 				--subcategory to options divider counts as an option that gets rendered
 				renderedOptions = renderedOptions + 1
-				lastOptionPos = lastOptionPos + Vector(0,14)
+				lastOptionPos = lastOptionPos + Vector(0,SkinArg.OptionLineHeight)
 
 			end
 		end
@@ -2900,7 +3157,7 @@ function ModConfigMenu.PostRender()
 							
 							textToDraw = tostring(textToDraw)
 							
-							local heightOffset = 6
+							local heightOffset = SkinArg.OptionHeightOffset
 							local font = Font10
 							local color = optionsFontColor
 							if not configMenuInOptions then
@@ -2913,7 +3170,7 @@ function ModConfigMenu.PostRender()
 								color = optionsFontColorNoCursor
 							end
 							if optionType == ModConfigMenu.OptionType.TITLE then
-								heightOffset = 8
+								heightOffset = SkinArg.OptionTitleHeightOffset
 								font = Font12
 								color = optionsFontColorTitle
 								if not configMenuInOptions then
@@ -2966,7 +3223,7 @@ function ModConfigMenu.PostRender()
 										
 										scrollOffset = posOffset
 										posOffset = Font10:GetStringWidthUTF8(textToDraw)/2
-										Font10:DrawStringUTF8(textToDraw, lastOptionPos.X - posOffset, lastOptionPos.Y - 6, color, 0, true)
+										Font10:DrawStringUTF8(textToDraw, lastOptionPos.X - posOffset, lastOptionPos.Y - SkinArg.OptionHeightOffset, color, 0, true)
 										
 										scrollOffset = posOffset - (Font10:GetStringWidthUTF8(textToDrawPreScroll)+scrollOffset)
 										numberToShow = numberString
@@ -3016,22 +3273,22 @@ function ModConfigMenu.PostRender()
 				renderedOptions = renderedOptions + 1
 				
 				--pos mod
-				lastOptionPos = lastOptionPos + Vector(0,14)
+				lastOptionPos = lastOptionPos + Vector(0,SkinArg.OptionLineHeight)
 				
 			end
 			
 			--render scroll arrows
 			if optionsCanScrollUp then
-				OptionsCursorSpriteUp:Render(centerPos + Vector(193,-86), vecZero, vecZero) --up arrow
+				OptionsCursorSpriteUp:Render(centerPos + SkinArg.OptionCursorSpriteUpOffset, vecZero, vecZero) --up arrow
 			end
 			if optionsCanScrollDown then
 			
-				local yPos = 66
+				local yPos = SkinArg.OptionCursorSpriteDownOffsetY
 				if shouldShowControls then
-					yPos = 40
+					yPos = SkinArg.OptionCursorSpriteDownOffsetYShowControls
 				end
 				
-				OptionsCursorSpriteDown:Render(centerPos + Vector(193,yPos), vecZero, vecZero) --down arrow
+				OptionsCursorSpriteDown:Render(centerPos + Vector(SkinArg.OptionCursorSpriteDownOffsetX,yPos), vecZero, vecZero) --down arrow
 				
 			end
 		
@@ -3045,7 +3302,7 @@ function ModConfigMenu.PostRender()
 			titleText = tostring(currentMenuCategory.NameTranslate or currentMenuCategory.Name)
 		end
 		local titleTextOffset = Font16Bold:GetStringWidthUTF8(titleText)/2
-		Font16Bold:DrawStringUTF8(titleText, titlePos.X - titleTextOffset, titlePos.Y - 9, mainFontColor, 0, true)
+		Font16Bold:DrawStringUTF8(titleText, titlePos.X - titleTextOffset, titlePos.Y + SkinArg.TitleYOffset, mainFontColor, 0, true)
 		
 		--info
 		local infoTable = nil
@@ -3074,9 +3331,9 @@ function ModConfigMenu.PostRender()
 		
 		if infoTable then
 			
-			local lineWidth = 340
+			local lineWidth = SkinArg.InfoLineWidth
 			if shouldShowControls then
-				lineWidth = 260
+				lineWidth = SkinArg.InfoLineWidthShowControls
 			end
 			
 			local infoTableDisplay = ModConfigMenu.ConvertDisplayToTextTable(infoTable, lineWidth, Font10)
@@ -3141,7 +3398,7 @@ function ModConfigMenu.PostRender()
 			
 			if popupTable then
 				
-				local lineWidth = currentMenuOption.PopupWidth or 180
+				local lineWidth = currentMenuOption.PopupWidth or SkinArg.DefaultPopupWidth
 				
 				local popupTableDisplay = ModConfigMenu.ConvertDisplayToTextTable(popupTable, lineWidth, Font10)
 				
@@ -3181,7 +3438,7 @@ function ModConfigMenu.PostRender()
 					goBackString = InputHelper.ControllerToString[ModConfigMenu.Config.LastBackPressed]
 				end
 			end
-			Font10:DrawStringUTF8(goBackString, (bottomLeft.X - Font10:GetStringWidthUTF8(goBackString)/2) + 36, bottomLeft.Y - 24, mainFontColor, 0, true)
+			Font10:DrawStringUTF8(goBackString, (bottomLeft.X - Font10:GetStringWidthUTF8(goBackString)/2) + SkinArg.ControlsGoBackOffsetX, bottomLeft.Y + SkinArg.ControlsGoBackOffsetY, mainFontColor, 0, true)
 
 			--select
 			local bottomRight = ScreenHelper.GetScreenBottomRight(0)
@@ -3213,7 +3470,7 @@ function ModConfigMenu.PostRender()
 						selectString = InputHelper.ControllerToString[ModConfigMenu.Config.LastSelectPressed]
 					end
 				end
-				Font10:DrawStringUTF8(selectString, (bottomRight.X - Font10:GetStringWidthUTF8(selectString)/2) - 36, bottomRight.Y - 24, mainFontColor, 0, true)
+				Font10:DrawStringUTF8(selectString, (bottomRight.X - Font10:GetStringWidthUTF8(selectString)/2) + SkinArg.ControlsSelectOffsetX, bottomRight.Y + SkinArg.ControlsSelectOffsetY, mainFontColor, 0, true)
 				
 			end
 			
@@ -3283,9 +3540,8 @@ function ModConfigMenu.OpenConfigMenu()
 		
 	else
 	
-		local sfx = SFXManager()
-		sfx:Play(SoundEffect.SOUND_BOSS2INTRO_ERRORBUZZ, 0.75, 0, false, 1)
-		
+		SkinArg.OpenConfigMenuFailedSoundEffectPlay()
+
 	end
 	
 end
@@ -3384,6 +3640,95 @@ Isaac.DebugString("Mod Config Menu Chinese v" .. ModConfigMenu.Version .. " load
 print("Mod Config Menu Chinese v" .. ModConfigMenu.Version .. " loaded!")
 
 -- code added by @frto027(steamid/github/bilibili)
+
+---------------
+--    skin   --
+---------------
+
+ModConfigMenu.Skin = {}
+
+function ModConfigMenu.Skin.AddFont(fontConfig)
+	if fontConfig.Name == nil or type(fontConfig.Name) ~= "string" then
+		error("The added font should have a name.", 2)
+		return false
+	end
+
+	for _, config in ipairs(fontConfigs) do
+		if config.Name == fontConfig.Name then
+			-- duplicate font name
+			return false
+		end
+	end
+
+	-- we don't create new fontConfig object here, to make more convinient to other mods
+	fontConfig.VersionPrintFont = fontConfig.VersionPrintFont or fontConfigs[1].VersionPrintFont
+	fontConfig.Font10 = fontConfig.Font10 or fontConfigs[1].Font10
+	fontConfig.Font12 = fontConfig.Font12 or fontConfigs[1].Font12
+	fontConfig.Font16Bold = fontConfig.Font16Bold or fontConfigs[1].Font16Bold
+	table.insert(fontConfigs, fontConfig)
+
+	if fontConfig.Name == ModConfigMenu.Config["Mod Config Menu"].SelectedFontName then
+		ReloadFont()
+	end
+end
+
+function ModConfigMenu.Skin.AddSkin(skinConfig)
+	if skinConfig.Name == nil or type(skinConfig.Name) ~= "string" then
+		error("The added skin should have a name.", 2)
+		return false
+	end
+
+	for _, config in ipairs(skinConfigs) do
+		if config.Name == skinConfig.Name then
+			-- duplicate font name
+			return false
+		end
+	end
+
+	table.insert(skinConfigs, skinConfig)
+
+	if skinConfig.Name == ModConfigMenu.Config["Mod Config Menu"].SelectedSkinName then
+		ReloadSkin(false)
+	end
+end
+		
+local function LoadFontFile(path)
+	local r = Font()
+	r:Load(path)
+	return r
+end
+
+ModConfigMenu.Skin.AddFont({
+	Name = "MCM",
+	VersionPrintFont = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/pftempestasevencondensed.fnt"),
+	Font10 = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont10.fnt"),
+	Font12 = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont12.fnt"),
+	Font16Bold = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont16bold.fnt"),
+})
+
+if REPENTANCE then
+	ModConfigMenu.Skin.AddFont({
+		Name = "Official",
+		DisplayName = "官中",
+		VersionPrintFont = LoadFontFile("resources-dlc3.zh/font/teammeatfontextended10.fnt"),
+		Font10 = LoadFontFile("resources-dlc3.zh/font/teammeatfontextended10.fnt"),
+		Font12 = LoadFontFile("resources-dlc3.zh/font/teammeatfontextended12.fnt"),
+		Font16Bold = LoadFontFile("resources-dlc3.zh/font/teammeatfontextended16bold.fnt"),
+	})	
+end
+
+if REPENTANCE_PLUS then
+	ModConfigMenu.Skin.AddFont({
+		Name = "Official",
+		DisplayName = "官中",
+		VersionPrintFont = LoadFontFile("resources.zh/font/teammeatfontextended10.fnt"),
+		Font10 = LoadFontFile("resources.zh/font/teammeatfontextended10.fnt"),
+		Font12 = LoadFontFile("resources.zh/font/teammeatfontextended12.fnt"),
+		Font16Bold = LoadFontFile("resources.zh/font/teammeatfontextended16bold.fnt"),
+	})	
+end
+
+ReloadFont()
 
 -------------
 --Translate--
@@ -3647,6 +3992,7 @@ ModConfigMenu.TranslateOptionsDisplayWithTable("Mod Config Menu",{
 	{"Hide HUD", "隐藏HUD"},
 	{"Reset To Default Keybind", "重置默认键位"},
 	{"Show Controls", "显示控件"},
+	{"Show Key Hint", "显示按键提示"},
 	{"Use Game Font","使用官方字体"},
 	{"Disable Legacy Warnings", "停用过时警告"},
 	{"On", "启用"},
@@ -3667,10 +4013,12 @@ ModConfigMenu.TranslateOptionsInfoTextWithTable("Mod Config Menu",{
 		= "按下此键以重置一个设置到默认键位",
 	["Use the font that comes with the game instead of the font in MCM.Only takes effect when the language is Chinese."]
 		= "使用游戏自带的字体, 而不是Mod配置菜单自带的字体。仅启用中文时有效。",
-	["Disable this to remove the back and select widgets at the lower corners of the screen and remove the bottom start-up message."]
-		= "禁用此项可以移除屏幕角落的 “返回”和“选择”控件 与开局的信息提示",
+	["Disable this to remove the back and select widgets."]
+		= "禁用此项可以移除屏幕角落的 “返回”和“选择”控件。",
 	["Use this setting to prevent warnings from being printed to the console for mods that use outdated features of Mod Config Menu."]
-		= "对于使用了过时MCM接口的mod,不再打印警告信息到控制台"
+		= "对于使用了过时MCM接口的mod,不再打印警告信息到控制台",
+	["Display Press x to open MCM when start game."]
+		= "开始游戏时显示按X打开Mod配置菜单"
 })
 
 -- changed in previous program
