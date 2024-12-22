@@ -16,22 +16,26 @@ local fontConfigs = {
 }
 
 local SpritesheetIndex = {
-	["menu.png"] =0,
-	["popup_thin_small.png"] =1,
-	["backselect.png"] =2,
-	["black.png"] =3,
-	["arrows.png"] =4,
-	["slider.png"] =5,
-	["offset.png"] =6,
-	["strike.png"] =7,
-	["menu_overlay.png"] =8,
+	["black.png"] ={ 0},
+	["arrows.png"] ={1},
+	["slider.png"] ={2, 3},
+	["menu.png"] ={4},
+	["popup_thin_small.png"] ={5},
+	["backselect.png"] ={6},
+	["offset.png"] ={7},
+	["strike.png"] ={8},
+	["menu_overlay.png"] ={9},
+}
+
+local ReplacedPopupGfxPngs = {
+
 }
 
 local skinConfigs = {
 	{
 		Name = "MCM",
 		DisplayName = "MCM",
-		UseFontName = nil, -- string, a Name of fontConfig, or nil if not change font
+		UseFontName = "MCM", -- string, a Name of fontConfig, or nil if not change font
 		Spritesheets = {
 			["menu.png"] 				= "gfx/ui/modconfig/menu.png",
 			["popup_thin_small.png"] 	= "gfx/ui/modconfig/popup_thin_small.png",
@@ -85,6 +89,9 @@ local DefaultSkinArg = {
 	LeftPosBottommostOffset = 90,
 	OptionLineHeight = 14,
 
+	MaxOptionCount = 12, 
+	ExpectedCursurPosition = 6,
+
 	OptionPos = Vector(68,-18),
 	OptionPosTopmostOffset = -108,
 	OptionPosBottommostOffset = 86,
@@ -132,6 +139,24 @@ local DefaultSkinArg = {
 	-- the disabled/actived color
 	ColorDefault = Color(1,1,1,1,0,0,0),
 	ColorHalf = Color(1,1,1,0.5,0,0,0),
+
+	mainFontColor = KColor(34/255,32/255,30/255,1),
+	leftFontColor = KColor(35/255,31/255,30/255,1),
+	leftFontColorSelected = KColor(35/255,50/255,70/255,1)	,
+	optionsFontColor = KColor(34/255,32/255,30/255,1),
+	optionsFontColorAlpha = KColor(34/255,32/255,30/255,0.5),
+	optionsFontColorNoCursor = KColor(34/255,32/255,30/255,0.8),
+	optionsFontColorNoCursorAlpha = KColor(34/255,32/255,30/255,0.4),
+	optionsFontColorTitle = KColor(50/255,0,0,1),
+	optionsFontColorTitleAlpha = KColor(50/255,0,0,0.5)	,
+	subcategoryFontColor = KColor(34/255,32/255,30/255,1),
+	subcategoryFontColorSelected = KColor(34/255,50/255,70/255,1),
+	subcategoryFontColorAlpha = KColor(34/255,32/255,30/255,0.5),
+	subcategoryFontColorSelectedAlpha = KColor(34/255,50/255,70/255,0.5),
+
+
+
+
 }
 
 local function ResetSkinArg()
@@ -275,6 +300,7 @@ local function GetCurrentModPath()
 end
 local ReloadFont = nil
 local ReloadSkin = nil
+local ReloadMenuColors = nil
 --create the mod
 ModConfigMenu.Mod = ModConfigMenu.Mod or RegisterMod("Mod Config Menu", 1)
 CustomCallbackHelper.ExtendMod(ModConfigMenu.Mod)
@@ -529,11 +555,16 @@ ReloadSkin = function (updateFont)
 	local templateSkinConfig = skinConfigs[1]
 	local selectedSpritesheets = selectedSkin.Spritesheets or templateSkinConfig.Spritesheets
 	for k,v in pairs(templateSkinConfig.Spritesheets) do
-		local idx = SpritesheetIndex[k]
-		if idx ~= nil then
-			for _, sprite in ipairs(AllCreatedSprites) do
-				sprite:ReplaceSpritesheet(idx, selectedSpritesheets[k] or v)
+		local idxs = SpritesheetIndex[k]
+
+		if idxs ~= nil then
+			for _, idx in ipairs(idxs) do
+				for _, sprite in ipairs(AllCreatedSprites) do
+					sprite:ReplaceSpritesheet(idx, selectedSpritesheets[k] or v)
+					sprite:LoadGraphics()
+				end
 			end
+
 		end
 	end
 
@@ -544,6 +575,10 @@ ReloadSkin = function (updateFont)
 	ModConfigMenu.PopupGfx.WIDE_SMALL = replacedPopupGfx.WIDE_SMALL or skinConfigs[1].PopupGfx.WIDE_SMALL
 	ModConfigMenu.PopupGfx.WIDE_MEDIUM = replacedPopupGfx.WIDE_MEDIUM or skinConfigs[1].PopupGfx.WIDE_MEDIUM
 	ModConfigMenu.PopupGfx.WIDE_LARGE = replacedPopupGfx.WIDE_LARGE or skinConfigs[1].PopupGfx.WIDE_LARGE
+
+	for k,v in pairs(skinConfigs[1].PopupGfx) do
+		ReplacedPopupGfxPngs[v] = selectedSkin.PopupGfx[k]
+	end
 
 	ResetSkinArg()
 	-- skin pos for font
@@ -567,8 +602,10 @@ ReloadSkin = function (updateFont)
 	
 	colorDefault = SkinArg.ColorDefault
 	colorHalf = SkinArg.ColorHalf
+
+	ReloadMenuColors()
 end
---popups
+--popup
 ModConfigMenu.PopupGfx = ModConfigMenu.PopupGfx or {}
 ModConfigMenu.PopupGfx.THIN_SMALL = "gfx/ui/modconfig/popup_thin_small.png"
 ModConfigMenu.PopupGfx.THIN_MEDIUM = "gfx/ui/modconfig/popup_thin_medium.png"
@@ -1740,6 +1777,7 @@ function ModConfigMenu.EnterPopup()
 			local popupSpritesheet = ModConfigMenu.PopupGfx.THIN_SMALL
 			if currentMenuOption.PopupGfx and type(currentMenuOption.PopupGfx) == "string" then
 				popupSpritesheet = currentMenuOption.PopupGfx
+				popupSpritesheet = ReplacedPopupGfxPngs[popupSpritesheet] or popupSpritesheet
 			end
 			PopupSprite:ReplaceSpritesheet(5, popupSpritesheet)
 			PopupSprite:LoadGraphics()
@@ -1869,6 +1907,26 @@ local subcategoryFontColor = KColor(34/255,32/255,30/255,1)
 local subcategoryFontColorSelected = KColor(34/255,50/255,70/255,1)
 local subcategoryFontColorAlpha = KColor(34/255,32/255,30/255,0.5)
 local subcategoryFontColorSelectedAlpha = KColor(34/255,50/255,70/255,0.5)
+
+ReloadMenuColors = function()
+	mainSpriteColor = colorDefault
+	optionsSpriteColor = colorDefault
+	optionsSpriteColorAlpha = colorHalf
+	
+	mainFontColor = SkinArg.mainFontColor
+	leftFontColor = SkinArg.leftFontColor
+	leftFontColorSelected = SkinArg.leftFontColorSelected
+	optionsFontColor = SkinArg.optionsFontColor
+	optionsFontColorAlpha = SkinArg.optionsFontColorAlpha
+	optionsFontColorNoCursor = SkinArg.optionsFontColorNoCursor
+	optionsFontColorNoCursorAlpha = SkinArg.optionsFontColorNoCursorAlpha
+	optionsFontColorTitle = SkinArg.optionsFontColorTitle
+	optionsFontColorTitleAlpha = SkinArg.optionsFontColorTitleAlpha
+	subcategoryFontColor = SkinArg.subcategoryFontColor
+	subcategoryFontColorSelected = SkinArg.subcategoryFontColorSelected
+	subcategoryFontColorAlpha = SkinArg.subcategoryFontColorAlpha
+	subcategoryFontColorSelectedAlpha = SkinArg.subcategoryFontColorSelectedAlpha
+end
 
 function ModConfigMenu.ConvertDisplayToTextTable(displayValue, lineWidth, font)
 
@@ -2897,14 +2955,14 @@ function ModConfigMenu.PostRender()
 				optionPos = optionPos + Vector(0, math.min(numOptions-1, 10) * SkinArg.SubCategoryHeight * -1)
 			end
 			
-			if numOptions > 12 then
+			if numOptions > SkinArg.MaxOptionCount then
 			
-				if configMenuPositionCursorOption > 6 and configMenuInOptions then
+				if configMenuPositionCursorOption > SkinArg.ExpectedCursurPosition and configMenuInOptions then
 				
 					optionsCanScrollUp = true
 					
-					local cursorScroll = configMenuPositionCursorOption - 6
-					local maxOptionsScroll = numOptions - 12
+					local cursorScroll = configMenuPositionCursorOption - SkinArg.ExpectedCursurPosition
+					local maxOptionsScroll = numOptions - SkinArg.MaxOptionCount
 					optionsDesiredOffset = math.min(cursorScroll, maxOptionsScroll) * -SkinArg.OptionLineHeight
 					
 					if cursorScroll < maxOptionsScroll then
@@ -3297,7 +3355,7 @@ function ModConfigMenu.PostRender()
 		MenuOverlaySprite:Render(centerPos, vecZero, vecZero)
 		
 		--title
-		local titleText = "mod配置菜单" -- "Mod Config Menu"
+		local titleText = "Mod配置菜单" -- "Mod Config Menu"
 		if configMenuInSubcategory then
 			titleText = tostring(currentMenuCategory.NameTranslate or currentMenuCategory.Name)
 		end
@@ -3647,6 +3705,9 @@ print("Mod Config Menu Chinese v" .. ModConfigMenu.Version .. " loaded!")
 
 ModConfigMenu.Skin = {}
 
+-- debug it
+ModConfigMenu.Skin.CurSkinArg = SkinArg
+
 function ModConfigMenu.Skin.AddFont(fontConfig)
 	if fontConfig.Name == nil or type(fontConfig.Name) ~= "string" then
 		error("The added font should have a name.", 2)
@@ -3706,7 +3767,7 @@ ModConfigMenu.Skin.AddFont({
 	Font16Bold = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont16bold.fnt"),
 })
 
-if REPENTANCE then
+if REPENTANCE and not REPENTANCE_PLUS then
 	ModConfigMenu.Skin.AddFont({
 		Name = "Official",
 		DisplayName = "官中",
@@ -3725,8 +3786,87 @@ if REPENTANCE_PLUS then
 		Font10 = LoadFontFile("resources.zh/font/teammeatfontextended10.fnt"),
 		Font12 = LoadFontFile("resources.zh/font/teammeatfontextended12.fnt"),
 		Font16Bold = LoadFontFile("resources.zh/font/teammeatfontextended16bold.fnt"),
-	})	
+	})
 end
+
+ModConfigMenu.Skin.AddFont({
+	Name = "宋体",
+	DisplayName = "宋体",
+	VersionPrintFont = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/pftempestasevencondensed.fnt"),
+	Font10 = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/songti/12.fnt"),
+	Font12 = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/songti/14.fnt"),
+	Font16Bold = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/songti/16.fnt"),
+	SkinArg = {
+		OptionLineHeight = 16,
+		TitleYOffset = -7,
+		MaxOptionCount = 10,
+	}
+})
+
+ModConfigMenu.Skin.AddFont({
+	Name = "楷体",
+	DisplayName = "楷体",
+	VersionPrintFont = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/pftempestasevencondensed.fnt"),
+	Font10 = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/kaiti/12.fnt"),
+	Font12 = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/kaiti/14.fnt"),
+	Font16Bold = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/kaiti/16.fnt"),
+	SkinArg = {
+		OptionLineHeight = 16,
+		TitleYOffset = -7,
+		MaxOptionCount = 10,
+	}
+})
+
+ModConfigMenu.Skin.AddSkin({
+	Name = "传说",
+	DisplayName = "XXX传说",
+
+	UseFontName = "宋体",
+
+	Spritesheets = {
+		["menu.png"] 				= "gfx/ui/modconfig-legend/menu.png",
+		["popup_thin_small.png"] 	= "gfx/ui/modconfig-legend/popup_thin_small.png",
+		["backselect.png"] 			= "gfx/ui/modconfig-legend/backselect.png",
+		["black.png"] 				= "gfx/ui/modconfig-legend/black.png",
+		["arrows.png"]				= "gfx/ui/modconfig-legend/arrows.png",
+		["slider.png"]				= "gfx/ui/modconfig-legend/slider.png",
+		["offset.png"]				= "gfx/ui/modconfig-legend/offset.png",
+		["strike.png"]				= "gfx/ui/modconfig-legend/strike.png",
+		["menu_overlay.png"] 		= "gfx/ui/modconfig-legend/menu_overlay.png",
+	},
+
+	PopupGfx = {
+		THIN_SMALL = "gfx/ui/modconfig-legend/popup_thin_small.png",
+		THIN_MEDIUM = "gfx/ui/modconfig-legend/popup_thin_medium.png",
+		THIN_LARGE = "gfx/ui/modconfig-legend/popup_thin_large.png",
+		WIDE_SMALL = "gfx/ui/modconfig-legend/popup_wide_small.png",
+		WIDE_MEDIUM = "gfx/ui/modconfig-legend/popup_wide_medium.png",
+		WIDE_LARGE = "gfx/ui/modconfig-legend/popup_wide_large.png"
+	},
+
+
+	SkinArg = {
+		InfoLineWidthShowControls = 280,
+
+		ColorDefault = Color(1,1,1,1,0,0,0),
+		ColorHalf = Color(1,1,1,0.8,0,0,0),
+
+		mainFontColor = KColor(234/255,232/255,230/255,1),
+		leftFontColor = KColor(235/255,231/255,230/255,1),
+		leftFontColorSelected = KColor(235/255,250/255,270/255,1)	,
+		optionsFontColor = KColor(234/255,232/255,230/255,1),
+		optionsFontColorAlpha = KColor(234/255,232/255,230/255,0.5),
+		optionsFontColorNoCursor = KColor(186/255,186/255,186/255,0.8),
+		optionsFontColorNoCursorAlpha = KColor(186/255,186/255,186/255,0.4),
+		optionsFontColorTitle = KColor(249/255,82/255,28/255,1),
+		optionsFontColorTitleAlpha = KColor(249/255,82/255,28/255,0.7)	,
+		subcategoryFontColor = KColor(234/255,232/255,230/255,1),
+		subcategoryFontColorSelected = KColor(234/255,250/255,250/255,1),
+		subcategoryFontColorAlpha = KColor(234/255,232/255,230/255,0.5),
+		subcategoryFontColorSelectedAlpha = KColor(234/255,250/255,255/255,0.5),
+	
+	}
+})
 
 ReloadFont()
 
@@ -3976,8 +4116,8 @@ ModConfigMenu.TranslateOptionsInfoTextWithTable("General", {
 		= "设置使用药丸/卡牌时, 播报语音的频率"
 })
 
-ModConfigMenu.SetCategoryNameTranslate("Mod Config Menu", "mod配置菜单")
-ModConfigMenu.SetCategoryInfoTranslate("Mod Config Menu", "mod配置菜单设置项$newline在这里修改菜单的键位")
+ModConfigMenu.SetCategoryNameTranslate("Mod Config Menu", "Mod配置菜单")
+ModConfigMenu.SetCategoryInfoTranslate("Mod Config Menu", "Mod配置菜单设置项$newline在这里修改菜单的键位")
 ModConfigMenu.TranslateOptionsDisplayTextWithTable("Mod Config Menu",{
 	["F10 will always open this menu."] = "始终可以使用F10打开当前页面",
 })
@@ -4004,9 +4144,9 @@ ModConfigMenu.TranslateOptionsDisplayWithTable("Mod Config Menu",{
 
 ModConfigMenu.TranslateOptionsInfoTextWithTable("Mod Config Menu",{
 	["Choose what button on your keyboard will open Mod Config Menu."]
-		= "选择打开mod配置菜单的键盘按键",
+		= "选择打开Mod配置菜单的键盘按键",
 	["Choose what button on your controller will open Mod Config Menu."]
-		= "选择打开mod配置菜单的控制器按钮",
+		= "选择打开Mod配置菜单的控制器按钮",
 	["Enable or disable the hud when this menu is open."]
 		= "当前菜单中是否显示HUD",
 	["Press this button on your keyboard to reset a setting to its default value."]
