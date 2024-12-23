@@ -7,7 +7,7 @@ local fontConfigs = {
 	-- {
 	--  Name = "MCM",
 	--  DisplayName = "MCM",
-	-- 	VersionPrintFont = Font(),
+	-- 	VersionPrintFont = Font(), -- fnt文件字符串路径或Font对象均可，推荐使用fnt文件路径，以避免内存浪费
 	-- 	Font10 = Font(),
 	-- 	Font12 = Font(),
 	-- 	Font16Bold = Font(),
@@ -524,6 +524,11 @@ local Font12
 
 local Font16Bold
 
+local DefaultVersionPrintFont = Font()
+local DefaultFont10 = Font()
+local DefaultFont12 = Font()
+local DefaultFont16Bold = Font()
+
 ReloadFont = function ()
 	local selectedFont = fontConfigs[1]
 	for _, font in ipairs(fontConfigs) do
@@ -533,6 +538,23 @@ ReloadFont = function ()
 	end
 	versionPrintFont, Font10, Font12, Font16Bold = 
 		selectedFont.VersionPrintFont, selectedFont.Font10, selectedFont.Font12, selectedFont.Font16Bold
+	
+	if type(versionPrintFont) == "string" then
+		DefaultVersionPrintFont:Load(versionPrintFont)
+		versionPrintFont = DefaultVersionPrintFont
+	end
+	if type(Font10) == "string" then
+		DefaultFont10:Load(Font10)
+		Font10 = DefaultFont10
+	end
+	if type(Font12) == "string" then
+		DefaultFont12:Load(Font12)
+		Font12 = DefaultFont12
+	end
+	if type(Font16Bold) == "string" then
+		DefaultFont16Bold:Load(Font16Bold)
+		Font16Bold = DefaultFont16Bold
+	end
 end
 
 ReloadSkin = function (updateFont)
@@ -3761,20 +3783,20 @@ end
 
 ModConfigMenu.Skin.AddFont({
 	Name = "MCM",
-	VersionPrintFont = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/pftempestasevencondensed.fnt"),
-	Font10 = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont10.fnt"),
-	Font12 = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont12.fnt"),
-	Font16Bold = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont16bold.fnt"),
+	VersionPrintFont = GetCurrentModPath() .. "resources/mcm_cn_font/pftempestasevencondensed.fnt",
+	Font10 = GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont10.fnt",
+	Font12 = GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont12.fnt",
+	Font16Bold = GetCurrentModPath() .. "resources/mcm_cn_font/teammeatfont16bold.fnt",
 })
 
 if REPENTANCE and not REPENTANCE_PLUS then
 	ModConfigMenu.Skin.AddFont({
 		Name = "Official",
 		DisplayName = "官中",
-		VersionPrintFont = LoadFontFile("resources-dlc3.zh/font/teammeatfontextended10.fnt"),
-		Font10 = LoadFontFile("resources-dlc3.zh/font/teammeatfontextended10.fnt"),
-		Font12 = LoadFontFile("resources-dlc3.zh/font/teammeatfontextended12.fnt"),
-		Font16Bold = LoadFontFile("resources-dlc3.zh/font/teammeatfontextended16bold.fnt"),
+		VersionPrintFont = "resources-dlc3.zh/font/teammeatfontextended10.fnt",
+		Font10 = "resources-dlc3.zh/font/teammeatfontextended10.fnt",
+		Font12 = "resources-dlc3.zh/font/teammeatfontextended12.fnt",
+		Font16Bold = "resources-dlc3.zh/font/teammeatfontextended16bold.fnt",
 	})	
 end
 
@@ -3782,20 +3804,33 @@ if REPENTANCE_PLUS then
 	ModConfigMenu.Skin.AddFont({
 		Name = "Official",
 		DisplayName = "官中",
-		VersionPrintFont = LoadFontFile("resources.zh/font/teammeatfontextended10.fnt"),
-		Font10 = LoadFontFile("resources.zh/font/teammeatfontextended10.fnt"),
-		Font12 = LoadFontFile("resources.zh/font/teammeatfontextended12.fnt"),
-		Font16Bold = LoadFontFile("resources.zh/font/teammeatfontextended16bold.fnt"),
+		VersionPrintFont = "resources.zh/font/teammeatfontextended10.fnt",
+		Font10 = "resources.zh/font/teammeatfontextended10.fnt",
+		Font12 = "resources.zh/font/teammeatfontextended12.fnt",
+		Font16Bold = "resources.zh/font/teammeatfontextended16bold.fnt",
 	})
 end
 
 ModConfigMenu.Skin.AddFont({
+	Name = "Fusion-Pixel",
+	DisplayName = "「缝合像素 / Fusion Pixel」",
+	VersionPrintFont = GetCurrentModPath() .. "resources/mcm_cn_font/pftempestasevencondensed.fnt",
+	Font10 = GetCurrentModPath() .. "resources/mcm_cn_font/fusion-pixel-font/10.fnt",
+	Font12 = GetCurrentModPath() .. "resources/mcm_cn_font/fusion-pixel-font/12.fnt",
+	Font16Bold = GetCurrentModPath() .. "resources/mcm_cn_font/songti/16.fnt", -- 大字体未提供，使用宋体
+
+	SkinArg = {
+		TitleYOffset = -7,
+	}
+})
+
+ModConfigMenu.Skin.AddFont({
 	Name = "宋体",
 	DisplayName = "宋体",
-	VersionPrintFont = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/pftempestasevencondensed.fnt"),
-	Font10 = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/songti/12.fnt"),
-	Font12 = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/songti/14.fnt"),
-	Font16Bold = LoadFontFile(GetCurrentModPath() .. "resources/mcm_cn_font/songti/16.fnt"),
+	VersionPrintFont = GetCurrentModPath() .. "resources/mcm_cn_font/pftempestasevencondensed.fnt",
+	Font10 = GetCurrentModPath() .. "resources/mcm_cn_font/songti/12.fnt",
+	Font12 = GetCurrentModPath() .. "resources/mcm_cn_font/songti/14.fnt",
+	Font16Bold = GetCurrentModPath() .. "resources/mcm_cn_font/songti/16.fnt",
 	SkinArg = {
 		OptionLineHeight = 16,
 		TitleYOffset = -7,
