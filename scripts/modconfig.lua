@@ -414,12 +414,13 @@ function ModConfigMenu.RoomIsSafe()
 end
 
 ModConfigMenu.IsVisible = false
+local firstTimeShowVersionPrintTimer = true
 function ModConfigMenu.PostGameStarted()
 
 	rerunWarnMessage = nil
 
-	if ModConfigMenu.Config["Mod Config Menu"].ShowKeyPressHint then
-
+	if firstTimeShowVersionPrintTimer and ModConfigMenu.Config["Mod Config Menu"].ShowKeyPressHint then
+		firstTimeShowVersionPrintTimer = false
 		versionPrintTimer = 120
 		
 	end
