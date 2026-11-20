@@ -1,7 +1,7 @@
 -------------
 -- version --
 -------------
-local fileVersion = 10034
+local fileVersion = 10035
 
 local fontConfigs = {
 	-- {
@@ -390,7 +390,7 @@ function ModConfigMenu.RoomIsSafe()
 
 	local roomHasDanger = false
 	
-	for _, entity in pairs(Isaac.GetRoomEntities()) do
+	for _, entity in ipairs(Isaac.GetRoomEntities()) do
 		if entity:IsActiveEnemy() and not entity:HasEntityFlags(EntityFlag.FLAG_FRIENDLY)
 		and (not ModConfigMenu.IgnoreActiveEnemies[entity.Type] or (ModConfigMenu.IgnoreActiveEnemies[entity.Type] and not ModConfigMenu.IgnoreActiveEnemies[entity.Type][-1] and not ModConfigMenu.IgnoreActiveEnemies[entity.Type][entity.Variant]))
 		and (not (entity.Type == EntityType.ENTITY_DARK_ESAU and entity:ToNPC().State == 3)) then
@@ -2151,7 +2151,7 @@ function ModConfigMenu.PostRender()
 	--handle toggling the menu
 	if ModConfigMenu.ControlsEnabled and not isPaused then
 	
-		for i=0, 4 do
+		for _, i in ipairs({-2, 0,1,2,3}) do
 		
 			if InputHelper.KeyboardTriggered(openMenuGlobal, i)
 			or (openMenuKeyboard > -1 and InputHelper.KeyboardTriggered(openMenuKeyboard, i))
@@ -2378,7 +2378,7 @@ function ModConfigMenu.PostRender()
 									numberToChange = nil
 									recievedInput = true
 								else
-									for i=0, 4 do
+									for _, i in ipairs({-2, 0,1,2,3}) do
 										if optionType == ModConfigMenu.OptionType.KEYBIND_KEYBOARD then
 											for j=32, 400 do
 												if InputHelper.KeyboardTriggered(j, i) then
@@ -3575,7 +3575,7 @@ function ModConfigMenu.PostRender()
 			
 		end
 		
-		for _, entity in pairs(Isaac.GetRoomEntities()) do
+		for _, entity in ipairs(Isaac.GetRoomEntities()) do
 			if entity.Type == EntityType.ENTITY_DARK_ESAU then
 				local data = entity:ToNPC():GetData()
 				data.ConfigMenuEsauPosition = nil

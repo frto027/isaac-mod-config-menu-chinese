@@ -136,7 +136,7 @@ function InputHelper.MultipleActionTriggered(actions, controllerIndex)
 
 	for i,action in pairs(actions) do
 	
-		for index=0, 4 do
+		for _, index in ipairs({-2,0,1,2,3}) do
 		
 			if controllerIndex ~= nil then
 				index = controllerIndex
@@ -162,7 +162,7 @@ function InputHelper.MultipleActionPressed(actions, controllerIndex)
 
 	for i,action in pairs(actions) do
 	
-		for index=0, 4 do
+		for _, index in ipairs({-2,0,1,2,3}) do
 		
 			if controllerIndex ~= nil then
 				index = controllerIndex
@@ -188,7 +188,7 @@ function InputHelper.MultipleButtonTriggered(buttons, controllerIndex)
 
 	for i,button in pairs(buttons) do
 	
-		for index=0, 4 do
+		for _, index in ipairs({-2,0,1,2,3}) do
 		
 			if controllerIndex ~= nil then
 				index = controllerIndex
@@ -214,7 +214,7 @@ function InputHelper.MultipleButtonPressed(buttons, controllerIndex)
 
 	for i,button in pairs(buttons) do
 	
-		for index=0, 4 do
+		for _, index in ipairs({-2,0,1,2,3}) do
 		
 			if controllerIndex ~= nil then
 				index = controllerIndex
@@ -240,7 +240,7 @@ function InputHelper.MultipleKeyboardTriggered(keys, controllerIndex)
 
 	for i,key in pairs(keys) do
 	
-		for index=0, 4 do
+		for _, index in ipairs({-2,0,1,2,3}) do
 		
 			if controllerIndex ~= nil then
 				index = controllerIndex
@@ -266,7 +266,7 @@ function InputHelper.MultipleKeyboardPressed(keys, controllerIndex)
 
 	for i,key in pairs(keys) do
 	
-		for index=0, 4 do
+		for _, index in ipairs({-2,0,1,2,3}) do
 		
 			if controllerIndex ~= nil then
 				index = controllerIndex
